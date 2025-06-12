@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { DrizzleService } from 'src/database/drizzle.service';
 import { students } from 'src/database/schema';
 import { eq } from 'drizzle-orm';
@@ -31,18 +26,14 @@ export class AuthStudentService {
     });
 
     if (!user) {
-      throw new NotFoundException(
-        `User with Matric Number ${matricNumber} not found`,
-      );
+      throw new NotFoundException(`User with Matric Number ${matricNumber} not found`);
     }
 
     return user;
   }
 
   async login(studentLoginDto: StudentLoginDto) {
-    this.logger.log(
-      `Logging in user with Matric Number: ${studentLoginDto.matricNumber}`,
-    );
+    this.logger.log(`Logging in user with Matric Number: ${studentLoginDto.matricNumber}`);
     const user = await this.findById(studentLoginDto.matricNumber);
     const tokens = await this.generateTokens(user.id.toString(), user.role);
 
@@ -50,9 +41,7 @@ export class AuthStudentService {
   }
 
   async generateTokens(userId: string, roles: string) {
-    this.logger.log(
-      `Generating tokens for user ID: ${userId}, Roles: ${roles}`,
-    );
+    this.logger.log(`Generating tokens for user ID: ${userId}, Roles: ${roles}`);
     const payload = { sub: userId, roles };
     const accessToken = await this.tokenService.generateAccessToken(payload);
     const refreshToken = await this.generateRefreshToken(userId);
@@ -63,9 +52,7 @@ export class AuthStudentService {
   private async generateRefreshToken(userId: string) {
     this.logger.log('Generating refresh token for user ID:', userId);
     console.log('Generating refresh token for user:', userId, typeof userId);
-    const refreshExpiration = this.configService.getOrThrow(
-      'JWT_REFRESH_EXPIRATION',
-    );
+    const refreshExpiration = this.configService.getOrThrow('JWT_REFRESH_EXPIRATION');
     const payload = { sub: userId };
     const token = await this.jwtService.signAsync(payload, {
       secret: this.configService.get('JWT_SECRET'),
@@ -83,20 +70,12 @@ export class AuthStudentService {
   }
 
   async refreshAccessToken(refreshToken: string) {
-    this.logger.log(
-      'Refreshing access token with refresh token:',
-      refreshToken,
-    );
-    const tokenRecord =
-      await this.drizzle.db.query.refreshStudentTokens.findFirst({
-        where: eq(refreshStudentTokens.token, refreshToken),
-      });
+    this.logger.log('Refreshing access token with refresh token:', refreshToken);
+    const tokenRecord = await this.drizzle.db.query.refreshStudentTokens.findFirst({
+      where: eq(refreshStudentTokens.token, refreshToken),
+    });
 
-    if (
-      !tokenRecord ||
-      tokenRecord.revoked ||
-      new Date() > tokenRecord.expiresAt
-    ) {
+    if (!tokenRecord || tokenRecord.revoked || new Date() > tokenRecord.expiresAt) {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
@@ -113,10 +92,7 @@ export class AuthStudentService {
 
   async revokeRefreshToken(token: string) {
     this.logger.log('Revoking refresh token:', token);
-    await this.drizzle.db
-      .update(refreshStudentTokens)
-      .set({ revoked: true })
-      .where(eq(refreshStudentTokens.token, token));
+    await this.drizzle.db.update(refreshStudentTokens).set({ revoked: true }).where(eq(refreshStudentTokens.token, token));
 
     this.logger.log('Refresh token revoked successfully:', token);
     return { message: 'Logged out successfully' };

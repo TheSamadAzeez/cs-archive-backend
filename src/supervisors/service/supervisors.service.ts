@@ -1,13 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { and, count, eq, sql } from 'drizzle-orm';
 import { DrizzleService } from 'src/database/drizzle.service';
-import {
-  projects,
-  projectStatusUpdate,
-  students,
-  tasks,
-  tasksStatusUpdate,
-} from 'src/database/schema';
+import { projects, projectStatusUpdate, students, tasks, tasksStatusUpdate } from 'src/database/schema';
 
 @Injectable()
 export class SupervisorsService {
@@ -15,9 +9,7 @@ export class SupervisorsService {
   constructor(private readonly drizzle: DrizzleService) {}
 
   async getStudentsBySupervisor(supervisorId: number) {
-    this.logger.log(
-      `Fetching students for supervisor with ID: ${supervisorId}`,
-    );
+    this.logger.log(`Fetching students for supervisor with ID: ${supervisorId}`);
 
     const supervisorStudents = await this.drizzle.db.query.students.findMany({
       where: eq(students.supervisorId, supervisorId),
@@ -34,9 +26,7 @@ export class SupervisorsService {
       studentName: `${student.firstName} ${student.lastName}`,
       matricNumber: student.matricNumber,
       email: student.email,
-      project:
-        studentProjects.find((project) => project.studentId === student.id) ||
-        null,
+      project: studentProjects.find((project) => project.studentId === student.id) || null,
       taskHistory: student.tasks.map((task) => ({
         taskName: task.task,
         description: task.description,
@@ -49,25 +39,12 @@ export class SupervisorsService {
 
   async getDashboardStats(supervisorId: number) {
     try {
-      this.logger.log(
-        `Fetching dashboard stats for supervisor ID: ${supervisorId}`,
-      );
+      this.logger.log(`Fetching dashboard stats for supervisor ID: ${supervisorId}`);
 
       // Execute queries in parallel for better performance
-      const [
-        totalStudentsResult,
-        taskStatusCounts,
-        projectStatusCounts,
-        projectSummary,
-        taskSummary,
-        tasksMetrics,
-        projectsMetrics,
-      ] = await Promise.all([
+      const [totalStudentsResult, taskStatusCounts, projectStatusCounts, projectSummary, taskSummary, tasksMetrics, projectsMetrics] = await Promise.all([
         // Get total students in one query
-        this.drizzle.db
-          .select({ totalStudents: count() })
-          .from(students)
-          .where(eq(students.supervisorId, supervisorId)),
+        this.drizzle.db.select({ totalStudents: count() }).from(students).where(eq(students.supervisorId, supervisorId)),
 
         // Get all task status counts in a single query
         this.drizzle.db
@@ -126,12 +103,9 @@ export class SupervisorsService {
 
       taskStatusCounts.forEach((item) => {
         if (item.status === 'Pending') tasksStatus.pending = Number(item.count);
-        if (item.status === 'Completed')
-          tasksStatus.completed = Number(item.count);
-        if (item.status === 'Rejected')
-          tasksStatus.rejected = Number(item.count);
-        if (item.status === 'Under Review')
-          tasksStatus.underReview = Number(item.count);
+        if (item.status === 'Completed') tasksStatus.completed = Number(item.count);
+        if (item.status === 'Rejected') tasksStatus.rejected = Number(item.count);
+        if (item.status === 'Under Review') tasksStatus.underReview = Number(item.count);
       });
 
       // Process project status counts into the expected format
@@ -142,12 +116,9 @@ export class SupervisorsService {
       };
 
       projectStatusCounts.forEach((item) => {
-        if (item.status === 'Not Started')
-          projectsStatus.notStarted = Number(item.count);
-        if (item.status === 'In Progress')
-          projectsStatus.inProgress = Number(item.count);
-        if (item.status === 'Completed')
-          projectsStatus.completed = Number(item.count);
+        if (item.status === 'Not Started') projectsStatus.notStarted = Number(item.count);
+        if (item.status === 'In Progress') projectsStatus.inProgress = Number(item.count);
+        if (item.status === 'Completed') projectsStatus.completed = Number(item.count);
       });
 
       return {
@@ -160,17 +131,12 @@ export class SupervisorsService {
         projectsMetrics,
       };
     } catch (error) {
-      this.logger.error(
-        `Error fetching dashboard stats for supervisor ${supervisorId}:`,
-        error,
-      );
+      this.logger.error(`Error fetching dashboard stats for supervisor ${supervisorId}:`, error);
       throw error;
     }
   }
 
-  private async getTasksMetrics(
-    supervisorId: number,
-  ): Promise<Record<string, Array<Record<string, number>>>> {
+  private async getTasksMetrics(supervisorId: number): Promise<Record<string, Array<Record<string, number>>>> {
     // Get metrics for the last 6 months
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
@@ -186,16 +152,8 @@ export class SupervisorsService {
       })
       .from(tasksStatusUpdate)
       .innerJoin(tasks, eq(tasksStatusUpdate.taskId, tasks.id))
-      .where(
-        and(
-          eq(tasks.supervisorId, supervisorId),
-          sql`${tasksStatusUpdate.createdAt} >= ${sixMonthsAgo.toISOString()}`,
-        ),
-      )
-      .groupBy(
-        sql`to_char(${tasksStatusUpdate.createdAt}, 'YYYY-MM')`,
-        tasksStatusUpdate.status,
-      )
+      .where(and(eq(tasks.supervisorId, supervisorId), sql`${tasksStatusUpdate.createdAt} >= ${sixMonthsAgo.toISOString()}`))
+      .groupBy(sql`to_char(${tasksStatusUpdate.createdAt}, 'YYYY-MM')`, tasksStatusUpdate.status)
       .orderBy(sql`to_char(${tasksStatusUpdate.createdAt}, 'YYYY-MM')`);
 
     // Process the results into the required format
@@ -204,9 +162,7 @@ export class SupervisorsService {
 
     // Initialize each month with empty data
     months.forEach((month) => {
-      monthlyData[month] = [
-        { Pending: 0, Completed: 0, Rejected: 0, 'Under Review': 0 },
-      ];
+      monthlyData[month] = [{ Pending: 0, Completed: 0, Rejected: 0, 'Under Review': 0 }];
     });
 
     // Fill in the data from query results
@@ -214,12 +170,7 @@ export class SupervisorsService {
       const monthKey = this.getMonthNameFromDbFormat(update.month as string);
       if (monthlyData[monthKey] && update.status) {
         // Use Object.prototype.hasOwnProperty.call to avoid linter error
-        if (
-          Object.prototype.hasOwnProperty.call(
-            monthlyData[monthKey][0],
-            update.status,
-          )
-        ) {
+        if (Object.prototype.hasOwnProperty.call(monthlyData[monthKey][0], update.status)) {
           monthlyData[monthKey][0][update.status] = Number(update.count);
         }
       }
@@ -228,9 +179,7 @@ export class SupervisorsService {
     return monthlyData;
   }
 
-  private async getProjectsMetrics(
-    supervisorId: number,
-  ): Promise<Record<string, Array<Record<string, number>>>> {
+  private async getProjectsMetrics(supervisorId: number): Promise<Record<string, Array<Record<string, number>>>> {
     // Get metrics for the last 6 months
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
@@ -246,16 +195,8 @@ export class SupervisorsService {
       })
       .from(projectStatusUpdate)
       .innerJoin(projects, eq(projectStatusUpdate.projectId, projects.id))
-      .where(
-        and(
-          eq(projects.supervisorId, supervisorId),
-          sql`${projectStatusUpdate.createdAt} >= ${sixMonthsAgo.toISOString()}`,
-        ),
-      )
-      .groupBy(
-        sql`to_char(${projectStatusUpdate.createdAt}, 'YYYY-MM')`,
-        projectStatusUpdate.status,
-      )
+      .where(and(eq(projects.supervisorId, supervisorId), sql`${projectStatusUpdate.createdAt} >= ${sixMonthsAgo.toISOString()}`))
+      .groupBy(sql`to_char(${projectStatusUpdate.createdAt}, 'YYYY-MM')`, projectStatusUpdate.status)
       .orderBy(sql`to_char(${projectStatusUpdate.createdAt}, 'YYYY-MM')`);
 
     // Process the results into the required format
@@ -264,9 +205,7 @@ export class SupervisorsService {
 
     // Initialize each month with empty data
     months.forEach((month) => {
-      monthlyData[month] = [
-        { 'Not Started': 0, 'In Progress': 0, Completed: 0 },
-      ];
+      monthlyData[month] = [{ 'Not Started': 0, 'In Progress': 0, Completed: 0 }];
     });
 
     // Fill in the data from query results
@@ -274,12 +213,7 @@ export class SupervisorsService {
       const monthKey = this.getMonthNameFromDbFormat(update.month as string);
       if (monthlyData[monthKey] && update.status) {
         // Use Object.prototype.hasOwnProperty.call to avoid linter error
-        if (
-          Object.prototype.hasOwnProperty.call(
-            monthlyData[monthKey][0],
-            update.status,
-          )
-        ) {
+        if (Object.prototype.hasOwnProperty.call(monthlyData[monthKey][0], update.status)) {
           monthlyData[monthKey][0][update.status] = Number(update.count);
         }
       }
@@ -290,20 +224,7 @@ export class SupervisorsService {
 
   private getLast6MonthsNames(): string[] {
     const months: string[] = [];
-    const monthNames = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
     const today = new Date();
     for (let i = 5; i >= 0; i--) {
@@ -320,20 +241,7 @@ export class SupervisorsService {
 
     const [year, month] = dbFormat.split('-');
     const monthIndex = parseInt(month, 10) - 1;
-    const monthNames = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
     return `${monthNames[monthIndex]} ${year}`;
   }

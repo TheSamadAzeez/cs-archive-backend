@@ -8,9 +8,7 @@ export const students = pgTable('students', {
   matricNumber: varchar({ length: 255 }).notNull().unique(),
   lastName: varchar({ length: 255 }).notNull(),
   firstName: varchar({ length: 255 }).notNull(),
-  fullName: text().generatedAlwaysAs(
-    (): SQL => sql`${students.firstName} || ' ' || ${students.lastName}`,
-  ),
+  fullName: text().generatedAlwaysAs((): SQL => sql`${students.firstName} || ' ' || ${students.lastName}`),
   supervisorId: integer()
     .notNull()
     .references(() => supervisor.id, {

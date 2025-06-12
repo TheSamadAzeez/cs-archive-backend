@@ -19,8 +19,7 @@ export class DrizzleModule {
           inject: [ConfigService],
           useFactory: (configService: ConfigService) => {
             const databaseURL = configService.get<string>('DATABASE_URL');
-            const nodeEnv =
-              configService.get<string>('NODE_ENV') || 'development';
+            const nodeEnv = configService.get<string>('NODE_ENV') || 'development';
             if (!databaseURL) {
               throw new Error('DATABASE_URL is not set');
             }

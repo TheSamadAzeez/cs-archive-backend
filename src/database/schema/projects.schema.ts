@@ -1,23 +1,11 @@
-import {
-  integer,
-  pgEnum,
-  pgTable,
-  serial,
-  text,
-  timestamp,
-  varchar,
-} from 'drizzle-orm/pg-core';
+import { integer, pgEnum, pgTable, serial, text, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { students } from './students.schema';
 import { supervisor } from './supervisors.schema';
 
 import { timestamps } from '../column.helpers';
 
 export type ProjectStatus = (typeof ProjectStatusEnum.enumValues)[number];
-export const ProjectStatusEnum = pgEnum('project_status', [
-  'Not Started',
-  'In Progress',
-  'Completed',
-]);
+export const ProjectStatusEnum = pgEnum('project_status', ['Not Started', 'In Progress', 'Completed']);
 
 export const projects = pgTable('projects', {
   id: serial().primaryKey(),

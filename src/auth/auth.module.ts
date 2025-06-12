@@ -23,12 +23,7 @@ import { AuthSupervisorService } from './services/auth-supervisor.service';
       inject: [ConfigService],
     }),
   ],
-  providers: [
-    AuthStudentService,
-    AuthSupervisorService,
-    TokenService,
-    JwtStrategy,
-  ],
+  providers: [AuthStudentService, AuthSupervisorService, TokenService, JwtStrategy],
   controllers: [AuthController],
   exports: [AuthStudentService, TokenService],
 })

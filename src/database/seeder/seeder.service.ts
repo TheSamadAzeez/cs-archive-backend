@@ -20,41 +20,21 @@ export class SeederService {
 
   async seedSupervisors() {
     const SUPERVISORS = [
-      {
-        email: 'prof.smith@university.edu',
-        lastname: 'Smith',
-        firstname: 'John',
-        role: 'supervisor',
-      },
-      {
-        email: 'prof.johnson@university.edu',
-        lastname: 'Johnson',
-        firstname: 'Emily',
-        role: 'supervisor',
-      },
-      {
-        email: 'prof.williams@university.edu',
-        lastname: 'Williams',
-        firstname: 'Robert',
-        role: 'supervisor',
-      },
+      { email: 'prof.smith@university.edu', lastname: 'Smith', firstname: 'John', role: 'supervisor' },
+      { email: 'prof.johnson@university.edu', lastname: 'Johnson', firstname: 'Emily', role: 'supervisor' },
+      { email: 'prof.williams@university.edu', lastname: 'Williams', firstname: 'Robert', role: 'supervisor' },
     ];
 
     for (const supervisorData of SUPERVISORS) {
-      const existingSupervisor =
-        await this.drizzle.db.query.supervisor.findFirst({
-          where: eq(schema.supervisor.email, supervisorData.email),
-        });
+      const existingSupervisor = await this.drizzle.db.query.supervisor.findFirst({
+        where: eq(schema.supervisor.email, supervisorData.email),
+      });
 
       if (!existingSupervisor) {
-        this.logger.log(
-          `Inserting supervisor: ${supervisorData.firstname} ${supervisorData.lastname}`,
-        );
+        this.logger.log(`Inserting supervisor: ${supervisorData.firstname} ${supervisorData.lastname}`);
         await this.drizzle.db.insert(schema.supervisor).values(supervisorData);
       } else {
-        this.logger.log(
-          `Skipping supervisor: ${supervisorData.firstname} ${supervisorData.lastname} (already exists)`,
-        );
+        this.logger.log(`Skipping supervisor: ${supervisorData.firstname} ${supervisorData.lastname} (already exists)`);
       }
     }
   }
@@ -69,90 +49,18 @@ export class SeederService {
     }
 
     const STUDENTS = [
-      {
-        matricNumber: 'CS2023001',
-        lastName: 'Johnson',
-        firstName: 'Michael',
-        email: 'michael.johnson@student.edu',
-        supervisorId: supervisors[0].id,
-      },
-      {
-        matricNumber: 'CS2023002',
-        lastName: 'Williams',
-        firstName: 'Emma',
-        email: 'emma.williams@student.edu',
-        supervisorId: supervisors[1].id,
-      },
-      {
-        matricNumber: 'CS2023003',
-        lastName: 'Brown',
-        firstName: 'James',
-        email: 'james.brown@student.edu',
-        supervisorId: supervisors[2].id,
-      },
-      {
-        matricNumber: 'CS2023004',
-        lastName: 'Jones',
-        firstName: 'Olivia',
-        email: 'olivia.jones@student.edu',
-        supervisorId: supervisors[0].id,
-      },
-      {
-        matricNumber: 'CS2023005',
-        lastName: 'Davis',
-        firstName: 'William',
-        email: 'william.davis@student.edu',
-        supervisorId: supervisors[1].id,
-      },
-      {
-        matricNumber: 'CS2023006',
-        lastName: 'Miller',
-        firstName: 'Sophia',
-        email: 'sophia.miller@student.edu',
-        supervisorId: supervisors[2].id,
-      },
-      {
-        matricNumber: 'CS2023007',
-        lastName: 'Wilson',
-        firstName: 'Benjamin',
-        email: 'benjamin.wilson@student.edu',
-        supervisorId: supervisors[0].id,
-      },
-      {
-        matricNumber: 'CS2023008',
-        lastName: 'Moore',
-        firstName: 'Isabella',
-        email: 'isabella.moore@student.edu',
-        supervisorId: supervisors[1].id,
-      },
-      {
-        matricNumber: 'CS2023009',
-        lastName: 'Taylor',
-        firstName: 'Mason',
-        email: 'mason.taylor@student.edu',
-        supervisorId: supervisors[2].id,
-      },
-      {
-        matricNumber: 'CS2023010',
-        lastName: 'Anderson',
-        firstName: 'Charlotte',
-        email: 'charlotte.anderson@student.edu',
-        supervisorId: supervisors[0].id,
-      },
-      {
-        matricNumber: 'CS2023011',
-        lastName: 'Thomas',
-        firstName: 'Elijah',
-        email: 'elijah.thomas@student.edu',
-        supervisorId: supervisors[1].id,
-      },
-      {
-        matricNumber: 'CS2023012',
-        lastName: 'Jackson',
-        firstName: 'Amelia',
-        email: 'amelia.jackson@student.edu',
-        supervisorId: supervisors[2].id,
-      },
+      { matricNumber: 'CS2023001', lastName: 'Johnson', firstName: 'Michael', email: 'michael.johnson@student.edu', supervisorId: supervisors[0].id },
+      { matricNumber: 'CS2023002', lastName: 'Williams', firstName: 'Emma', email: 'emma.williams@student.edu', supervisorId: supervisors[1].id },
+      { matricNumber: 'CS2023003', lastName: 'Brown', firstName: 'James', email: 'james.brown@student.edu', supervisorId: supervisors[2].id },
+      { matricNumber: 'CS2023004', lastName: 'Jones', firstName: 'Olivia', email: 'olivia.jones@student.edu', supervisorId: supervisors[0].id },
+      { matricNumber: 'CS2023005', lastName: 'Davis', firstName: 'William', email: 'william.davis@student.edu', supervisorId: supervisors[1].id },
+      { matricNumber: 'CS2023006', lastName: 'Miller', firstName: 'Sophia', email: 'sophia.miller@student.edu', supervisorId: supervisors[2].id },
+      { matricNumber: 'CS2023007', lastName: 'Wilson', firstName: 'Benjamin', email: 'benjamin.wilson@student.edu', supervisorId: supervisors[0].id },
+      { matricNumber: 'CS2023008', lastName: 'Moore', firstName: 'Isabella', email: 'isabella.moore@student.edu', supervisorId: supervisors[1].id },
+      { matricNumber: 'CS2023009', lastName: 'Taylor', firstName: 'Mason', email: 'mason.taylor@student.edu', supervisorId: supervisors[2].id },
+      { matricNumber: 'CS2023010', lastName: 'Anderson', firstName: 'Charlotte', email: 'charlotte.anderson@student.edu', supervisorId: supervisors[0].id },
+      { matricNumber: 'CS2023011', lastName: 'Thomas', firstName: 'Elijah', email: 'elijah.thomas@student.edu', supervisorId: supervisors[1].id },
+      { matricNumber: 'CS2023012', lastName: 'Jackson', firstName: 'Amelia', email: 'amelia.jackson@student.edu', supervisorId: supervisors[2].id },
     ];
 
     // Insert students directly with their data
@@ -162,14 +70,10 @@ export class SeederService {
       });
 
       if (!existingStudent) {
-        this.logger.log(
-          `Inserting student: ${student.firstName} ${student.lastName}`,
-        );
+        this.logger.log(`Inserting student: ${student.firstName} ${student.lastName}`);
         await this.drizzle.db.insert(schema.students).values(student);
       } else {
-        this.logger.log(
-          `Skipping student: ${student.firstName} ${student.lastName} (already exists)`,
-        );
+        this.logger.log(`Skipping student: ${student.firstName} ${student.lastName} (already exists)`);
       }
     }
   }
@@ -180,9 +84,7 @@ export class SeederService {
     const supervisors = await this.drizzle.db.query.supervisor.findMany();
 
     if (students.length === 0 || supervisors.length === 0) {
-      this.logger.error(
-        'No students or supervisors found. Please seed them first.',
-      );
+      this.logger.error('No students or supervisors found. Please seed them first.');
       return;
     }
 
@@ -230,18 +132,12 @@ export class SeederService {
 
       if (!existingProject) {
         // Create project with random status and start date
-        const statuses: ProjectStatus[] = [
-          'Not Started',
-          'In Progress',
-          'Completed',
-        ];
+        const statuses: ProjectStatus[] = ['Not Started', 'In Progress', 'Completed'];
         const status = statuses[Math.floor(Math.random() * statuses.length)];
 
         // Generate start date within the last year
         const startDate = new Date();
-        startDate.setMonth(
-          startDate.getMonth() - Math.floor(Math.random() * 12),
-        );
+        startDate.setMonth(startDate.getMonth() - Math.floor(Math.random() * 12));
 
         // Calculate progress bar value based on status
         let progressBar = 0;
@@ -251,9 +147,7 @@ export class SeederService {
           progressBar = 100;
         }
 
-        this.logger.log(
-          `Inserting project for student: ${student.firstName} ${student.lastName}`,
-        );
+        this.logger.log(`Inserting project for student: ${student.firstName} ${student.lastName}`);
 
         await this.drizzle.db.insert(schema.projects).values({
           title: projectTitles[titleIndex],
@@ -265,9 +159,7 @@ export class SeederService {
           studentId: student.id,
         });
       } else {
-        this.logger.log(
-          `Skipping project for student: ${student.firstName} ${student.lastName} (already exists)`,
-        );
+        this.logger.log(`Skipping project for student: ${student.firstName} ${student.lastName} (already exists)`);
       }
     }
   }
@@ -278,9 +170,7 @@ export class SeederService {
     const supervisors = await this.drizzle.db.query.supervisor.findMany();
 
     if (students.length === 0 || supervisors.length === 0) {
-      this.logger.error(
-        'No students or supervisors found. Please seed them first.',
-      );
+      this.logger.error('No students or supervisors found. Please seed them first.');
       return;
     }
 
@@ -288,28 +178,23 @@ export class SeederService {
     const taskTemplates = [
       {
         task: 'Literature Review',
-        description:
-          'Research and review existing literature related to the project topic.',
+        description: 'Research and review existing literature related to the project topic.',
         actions: 'Submit a comprehensive literature review document.',
       },
       {
         task: 'Project Proposal',
-        description:
-          'Develop a detailed proposal outlining the project objectives, methodology, and timeline.',
+        description: 'Develop a detailed proposal outlining the project objectives, methodology, and timeline.',
         actions: 'Submit the project proposal for review and approval.',
       },
       {
         task: 'Data Collection',
         description: 'Collect relevant data required for the project analysis.',
-        actions:
-          'Compile and organize the collected data in a structured format.',
+        actions: 'Compile and organize the collected data in a structured format.',
       },
       {
         task: 'Preliminary Analysis',
-        description:
-          'Conduct preliminary analysis of the collected data to identify patterns and insights.',
-        actions:
-          'Submit a report summarizing the findings from the preliminary analysis.',
+        description: 'Conduct preliminary analysis of the collected data to identify patterns and insights.',
+        actions: 'Submit a report summarizing the findings from the preliminary analysis.',
       },
       {
         task: 'Implementation',
@@ -318,20 +203,17 @@ export class SeederService {
       },
       {
         task: 'Testing and Validation',
-        description:
-          'Test the implemented solution and validate its performance.',
+        description: 'Test the implemented solution and validate its performance.',
         actions: 'Document the testing process and results.',
       },
       {
         task: 'Progress Report',
-        description:
-          'Prepare a report detailing the progress made so far and challenges encountered.',
+        description: 'Prepare a report detailing the progress made so far and challenges encountered.',
         actions: 'Submit the progress report for review.',
       },
       {
         task: 'Final Documentation',
-        description:
-          'Prepare comprehensive documentation of the entire project.',
+        description: 'Prepare comprehensive documentation of the entire project.',
         actions: 'Submit the final documentation for review and approval.',
       },
     ];
@@ -341,9 +223,7 @@ export class SeederService {
     // Generate 3-5 tasks for each student
     for (const student of students) {
       // Find supervisor for this student
-      const supervisor = supervisors.find(
-        (sup) => sup.id === student.supervisorId,
-      );
+      const supervisor = supervisors.find((sup) => sup.id === student.supervisorId);
 
       if (!supervisor) continue;
 
@@ -356,9 +236,7 @@ export class SeederService {
       });
 
       if (existingTasks.length === 0) {
-        this.logger.log(
-          `Creating ${numTasks} tasks for student: ${student.firstName} ${student.lastName}`,
-        );
+        this.logger.log(`Creating ${numTasks} tasks for student: ${student.firstName} ${student.lastName}`);
 
         // Generate tasks for this student
         for (let i = 0; i < numTasks; i++) {
@@ -370,9 +248,7 @@ export class SeederService {
 
           // Due date within the next 3 months
           const dueDate = new Date();
-          dueDate.setDate(
-            dueDate.getDate() + Math.floor(Math.random() * 90) + 1,
-          );
+          dueDate.setDate(dueDate.getDate() + Math.floor(Math.random() * 90) + 1);
 
           await this.drizzle.db.insert(schema.tasks).values({
             task: template.task,
@@ -385,9 +261,7 @@ export class SeederService {
           });
         }
       } else {
-        this.logger.log(
-          `Skipping tasks for student: ${student.firstName} ${student.lastName} (already has tasks)`,
-        );
+        this.logger.log(`Skipping tasks for student: ${student.firstName} ${student.lastName} (already has tasks)`);
       }
     }
   }
@@ -407,15 +281,12 @@ export class SeederService {
     }
 
     // Check if status updates already exist
-    const existingUpdates =
-      await this.drizzle.db.query.projectStatusUpdate.findMany({
-        limit: 1,
-      });
+    const existingUpdates = await this.drizzle.db.query.projectStatusUpdate.findMany({
+      limit: 1,
+    });
 
     if (existingUpdates.length > 0) {
-      this.logger.log(
-        'Project status updates already exist. Skipping seeding of project status updates.',
-      );
+      this.logger.log('Project status updates already exist. Skipping seeding of project status updates.');
       return;
     }
 
@@ -424,11 +295,7 @@ export class SeederService {
     // For each project, create 2-4 status updates
     for (const project of allProjects) {
       const numUpdates = Math.floor(Math.random() * 3) + 2; // 2-4 updates
-      const statuses: ProjectStatus[] = [
-        'Not Started',
-        'In Progress',
-        'Completed',
-      ];
+      const statuses: ProjectStatus[] = ['Not Started', 'In Progress', 'Completed'];
 
       // Get initial status based on project's current status
       let currentStatusIndex = statuses.indexOf(project.status);
@@ -468,15 +335,12 @@ export class SeederService {
     }
 
     // Check if status updates already exist
-    const existingUpdates =
-      await this.drizzle.db.query.tasksStatusUpdate.findMany({
-        limit: 1,
-      });
+    const existingUpdates = await this.drizzle.db.query.tasksStatusUpdate.findMany({
+      limit: 1,
+    });
 
     if (existingUpdates.length > 0) {
-      this.logger.log(
-        'Task status updates already exist. Skipping seeding of task status updates.',
-      );
+      this.logger.log('Task status updates already exist. Skipping seeding of task status updates.');
       return;
     }
 

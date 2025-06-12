@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  ExecutionContext,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorators/roles.decorators';
@@ -15,10 +11,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [context.getHandler(), context.getClass()]);
 
     if (isPublic) {
       return true;
@@ -29,10 +22,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       return false;
     }
 
-    const requiredRoles = this.reflector.getAllAndOverride<string[]>(
-      ROLES_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const requiredRoles = this.reflector.getAllAndOverride<string[]>(ROLES_KEY, [context.getHandler(), context.getClass()]);
 
     if (requiredRoles) {
       const request = context.switchToHttp().getRequest();
@@ -49,9 +39,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       }
 
       if (!requiredRoles.some((role) => user.roles.includes(role))) {
-        throw new ForbiddenException(
-          'You do not have the required roles to access this resource',
-        );
+        throw new ForbiddenException('You do not have the required roles to access this resource');
       }
     }
 

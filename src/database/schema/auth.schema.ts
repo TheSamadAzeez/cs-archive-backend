@@ -1,11 +1,4 @@
-import {
-  boolean,
-  integer,
-  pgTable,
-  serial,
-  text,
-  timestamp,
-} from 'drizzle-orm/pg-core';
+import { boolean, integer, pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core';
 import { timestamps } from '../column.helpers';
 import { students } from './students.schema';
 import { supervisor } from './supervisors.schema';
