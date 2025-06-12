@@ -23,7 +23,8 @@
     "drizzle:reset": "drizzle-kit reset",
     "drizzle:dev": "drizzle-kit dev",
     "drizzle:migrate": "drizzle-kit migrate",
-    "drizzle:studio": "drizzle-kit studio"
+    "drizzle:studio": "drizzle-kit studio",
+    "db:seed": "ts-node src/database/seeder/seed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
