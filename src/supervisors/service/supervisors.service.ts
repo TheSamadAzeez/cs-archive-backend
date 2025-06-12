@@ -48,6 +48,127 @@ export class SupervisorsService {
     }));
   }
 
+  async getDashboardStats(supervisorId: number) {
+    try {
+      this.logger.log(
+        `Fetching dashboard stats for supervisor ID: ${supervisorId}`,
+      );
+
+      // Execute queries in parallel for better performance
+      const [
+        totalStudentsResult,
+        taskStatusCounts,
+        projectStatusCounts,
+        projectSummary,
+        taskSummary,
+        tasksMetrics,
+        projectsMetrics,
+      ] = await Promise.all([
+        // Get total students in one query
+        this.drizzle.db
+          .select({ totalStudents: count() })
+          .from(students)
+          .where(eq(students.supervisorId, supervisorId)),
+
+        // Get all task status counts in a single query
+        this.drizzle.db
+          .select({
+            status: tasks.status,
+            count: count(),
+          })
+          .from(tasks)
+          .where(eq(tasks.supervisorId, supervisorId))
+          .groupBy(tasks.status),
+
+        // Get all project status counts in a single query
+        this.drizzle.db
+          .select({
+            status: projects.status,
+            count: count(),
+          })
+          .from(projects)
+          .where(eq(projects.supervisorId, supervisorId))
+          .groupBy(projects.status),
+
+        // Project summary
+        this.drizzle.db.query.projects.findMany({
+          where: eq(projects.supervisorId, supervisorId),
+          with: {
+            student: true,
+          },
+          orderBy: (projects, { desc }) => [desc(projects.updatedAt)],
+          limit: 6,
+        }),
+
+        // Task summary
+        this.drizzle.db.query.tasks.findMany({
+          where: eq(tasks.supervisorId, supervisorId),
+          with: {
+            student: true,
+          },
+          orderBy: (tasks, { desc }) => [desc(tasks.updatedAt)],
+          limit: 6,
+        }),
+
+        // Get task metrics
+        this.getTasksMetrics(supervisorId),
+
+        // Get project metrics
+        this.getProjectsMetrics(supervisorId),
+      ]);
+
+      // Process task status counts into the expected format
+      const tasksStatus = {
+        pending: 0,
+        completed: 0,
+        rejected: 0,
+        underReview: 0,
+      };
+
+      taskStatusCounts.forEach((item) => {
+        if (item.status === 'Pending') tasksStatus.pending = Number(item.count);
+        if (item.status === 'Completed')
+          tasksStatus.completed = Number(item.count);
+        if (item.status === 'Rejected')
+          tasksStatus.rejected = Number(item.count);
+        if (item.status === 'Under Review')
+          tasksStatus.underReview = Number(item.count);
+      });
+
+      // Process project status counts into the expected format
+      const projectsStatus = {
+        notStarted: 0,
+        inProgress: 0,
+        completed: 0,
+      };
+
+      projectStatusCounts.forEach((item) => {
+        if (item.status === 'Not Started')
+          projectsStatus.notStarted = Number(item.count);
+        if (item.status === 'In Progress')
+          projectsStatus.inProgress = Number(item.count);
+        if (item.status === 'Completed')
+          projectsStatus.completed = Number(item.count);
+      });
+
+      return {
+        totalStudents: Number(totalStudentsResult[0]?.totalStudents || 0),
+        tasksStatus,
+        projectsStatus,
+        projectSummary,
+        taskSummary,
+        tasksMetrics,
+        projectsMetrics,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Error fetching dashboard stats for supervisor ${supervisorId}:`,
+        error,
+      );
+      throw error;
+    }
+  }
+
   private async getTotalStudents(supervisorId: number) {
     const supervisorStudents = await this.drizzle.db
       .select({
@@ -259,51 +380,5 @@ export class SupervisorsService {
     ];
 
     return `${monthNames[monthIndex]} ${year}`;
-  }
-
-  async getDashboardStats(supervisorId: number) {
-    const totalStudents = await this.getTotalStudents(supervisorId);
-
-    const tasksStatus = {
-      pending: await this.getTaskStatusCount(supervisorId, 'Pending'),
-      completed: await this.getTaskStatusCount(supervisorId, 'Completed'),
-      rejected: await this.getTaskStatusCount(supervisorId, 'Rejected'),
-      underReview: await this.getTaskStatusCount(supervisorId, 'Under Review'),
-    };
-
-    const projectsStatus = {
-      inProgress: await this.getProjectStatusCount(supervisorId, 'In Progress'),
-      notStarted: await this.getProjectStatusCount(supervisorId, 'Not Started'),
-      completed: await this.getProjectStatusCount(supervisorId, 'Completed'),
-    };
-
-    const projectSummary = await this.drizzle.db.query.projects.findMany({
-      where: eq(projects.supervisorId, supervisorId),
-      with: {
-        student: true,
-      },
-      limit: 6,
-    });
-
-    const taskSummary = await this.drizzle.db.query.tasks.findMany({
-      where: eq(tasks.supervisorId, supervisorId),
-      with: {
-        student: true,
-      },
-      limit: 6,
-    });
-
-    const tasksMetrics = await this.getTasksMetrics(supervisorId);
-    const projectsMetrics = await this.getProjectsMetrics(supervisorId);
-
-    return {
-      totalStudents,
-      tasksStatus,
-      projectsStatus,
-      projectSummary,
-      taskSummary,
-      tasksMetrics,
-      projectsMetrics,
-    };
   }
 }
