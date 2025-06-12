@@ -3,11 +3,10 @@ import { and, count, eq, sql } from 'drizzle-orm';
 import { DrizzleService } from 'src/database/drizzle.service';
 import {
   projects,
-  ProjectStatus,
+  projectStatusUpdate,
   students,
   tasks,
   tasksStatusUpdate,
-  projectStatusUpdate,
 } from 'src/database/schema';
 
 @Injectable()
@@ -167,49 +166,6 @@ export class SupervisorsService {
       );
       throw error;
     }
-  }
-
-  private async getTotalStudents(supervisorId: number) {
-    const supervisorStudents = await this.drizzle.db
-      .select({
-        totalStudents: count(),
-      })
-      .from(students)
-      .where(eq(students.supervisorId, supervisorId));
-
-    return supervisorStudents[0].totalStudents;
-  }
-
-  private async getTaskStatusCount(supervisorId: number, status: string) {
-    const taskStatusCount = await this.drizzle.db
-      .select({
-        count: count(),
-      })
-      .from(tasks)
-      .where(
-        and(eq(tasks.supervisorId, supervisorId), eq(tasks.status, status)),
-      );
-
-    return taskStatusCount[0].count;
-  }
-
-  private async getProjectStatusCount(
-    supervisorId: number,
-    status: ProjectStatus,
-  ) {
-    const projectStatusCount = await this.drizzle.db
-      .select({
-        count: count(),
-      })
-      .from(projects)
-      .where(
-        and(
-          eq(projects.supervisorId, supervisorId),
-          eq(projects.status, status),
-        ),
-      );
-
-    return projectStatusCount[0].count;
   }
 
   private async getTasksMetrics(
