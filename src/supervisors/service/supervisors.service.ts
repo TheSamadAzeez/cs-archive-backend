@@ -69,8 +69,21 @@ export class SupervisorsService {
         // Project summary
         this.drizzle.db.query.projects.findMany({
           where: eq(projects.supervisorId, supervisorId),
+          columns: {
+            id: true,
+            title: true,
+            status: true,
+            updatedAt: true,
+          },
           with: {
-            student: true,
+            student: {
+              columns: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                matricNumber: true,
+              },
+            },
           },
           orderBy: (projects, { desc }) => [desc(projects.updatedAt)],
           limit: 6,
@@ -79,8 +92,22 @@ export class SupervisorsService {
         // Task summary
         this.drizzle.db.query.tasks.findMany({
           where: eq(tasks.supervisorId, supervisorId),
+          columns: {
+            id: true,
+            task: true,
+            description: true,
+            status: true,
+            updatedAt: true,
+          },
           with: {
-            student: true,
+            student: {
+              columns: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                matricNumber: true,
+              },
+            },
           },
           orderBy: (tasks, { desc }) => [desc(tasks.updatedAt)],
           limit: 6,
