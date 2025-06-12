@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { and, count, eq, sql } from 'drizzle-orm';
 import { DrizzleService } from 'src/database/drizzle.service';
 import { projects, projectStatusUpdate, students, Task, tasks, tasksStatusUpdate } from 'src/database/schema';
@@ -34,6 +34,39 @@ export class SupervisorsService {
       ...student,
       tasksProgress: this.calculateTasksProgress(student.tasks),
     }));
+  }
+
+  async getStudentById(supervisorId: number, studentId: number) {
+    const result = await this.drizzle.db.query.students.findFirst({
+      where: and(eq(students.id, studentId), eq(students.supervisorId, supervisorId)),
+      with: {
+        tasks: {
+          columns: {
+            id: true,
+            task: true,
+            description: true,
+            status: true,
+          },
+        },
+        project: {
+          columns: {
+            id: true,
+            title: true,
+            description: true,
+            status: true,
+          },
+        },
+      },
+    });
+
+    if (!result) {
+      throw new NotFoundException('Student not found');
+    }
+
+    return {
+      ...result,
+      tasksProgress: this.calculateTasksProgress(result.tasks),
+    };
   }
 
   private calculateTasksProgress(tasks: Pick<Task, 'status'>[]) {

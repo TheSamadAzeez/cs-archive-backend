@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Role, Roles } from 'src/auth/decorators/roles.decorators';
@@ -18,11 +18,11 @@ export class SupervisorsController {
     return this.supervisorsService.getStudents(supervisorId);
   }
 
-  // @Roles(Role.Supervisor)
-  // @Get('/students/:studentId')
-  // async getStudentById(@CurrentUser('userId') supervisorId: number, @Param('studentId') studentId: number) {
-  //   return this.supervisorsService.getStudentById(supervisorId, studentId);
-  // }
+  @Roles(Role.Supervisor)
+  @Get('/students/:studentId')
+  async getStudentById(@CurrentUser('userId') supervisorId: number, @Param('studentId') studentId: number) {
+    return this.supervisorsService.getStudentById(supervisorId, studentId);
+  }
 
   @Roles(Role.Supervisor)
   @Get('/dashboard-stats')
