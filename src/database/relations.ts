@@ -19,7 +19,10 @@ export const studentsRelations = relations(schema.students, ({ one, many }) => (
     references: [schema.supervisor.id],
   }),
   tasks: many(schema.tasks),
-  projects: many(schema.projects),
+  project: one(schema.projects, {
+    fields: [schema.students.id],
+    references: [schema.projects.id],
+  }),
 }));
 
 export const tasksRelations = relations(schema.tasks, ({ one }) => ({

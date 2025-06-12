@@ -3,6 +3,7 @@ import { timestamps } from '../column.helpers';
 import { students } from './students.schema';
 import { supervisor } from './supervisors.schema';
 
+export type Task = typeof tasks.$inferSelect;
 export const tasks = pgTable('tasks', {
   id: serial().primaryKey(),
   task: varchar({ length: 255 }).notNull(),

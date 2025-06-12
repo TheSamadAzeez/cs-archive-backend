@@ -14,13 +14,19 @@ export class SupervisorsController {
 
   @Roles(Role.Supervisor)
   @Get('/students')
-  async getStudentsBySupervisor(@CurrentUser('userId') userId: number) {
-    return this.supervisorsService.getStudentsBySupervisor(userId);
+  async getStudents(@CurrentUser('userId') supervisorId: number) {
+    return this.supervisorsService.getStudents(supervisorId);
   }
+
+  // @Roles(Role.Supervisor)
+  // @Get('/students/:studentId')
+  // async getStudentById(@CurrentUser('userId') supervisorId: number, @Param('studentId') studentId: number) {
+  //   return this.supervisorsService.getStudentById(supervisorId, studentId);
+  // }
 
   @Roles(Role.Supervisor)
   @Get('/dashboard-stats')
-  async getDashboardStats(@CurrentUser('userId') userId: number) {
-    return this.supervisorsService.getDashboardStats(userId);
+  async getDashboardStats(@CurrentUser('userId') supervisorId: number) {
+    return this.supervisorsService.getDashboardStats(supervisorId);
   }
 }

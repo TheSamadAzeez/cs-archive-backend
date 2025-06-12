@@ -139,14 +139,6 @@ export class SeederService {
         const startDate = new Date();
         startDate.setMonth(startDate.getMonth() - Math.floor(Math.random() * 12));
 
-        // Calculate progress bar value based on status
-        let progressBar = 0;
-        if (status === 'In Progress') {
-          progressBar = Math.floor(Math.random() * 70) + 10; // 10-80%
-        } else if (status === 'Completed') {
-          progressBar = 100;
-        }
-
         this.logger.log(`Inserting project for student: ${student.firstName} ${student.lastName}`);
 
         await this.drizzle.db.insert(schema.projects).values({
@@ -154,7 +146,6 @@ export class SeederService {
           description: projectDescriptions[titleIndex],
           status: status,
           startDate: startDate,
-          progressBar: progressBar,
           supervisorId: supervisor.id,
           studentId: student.id,
         });

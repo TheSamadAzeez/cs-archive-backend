@@ -1,40 +1,54 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { and, count, eq, sql } from 'drizzle-orm';
 import { DrizzleService } from 'src/database/drizzle.service';
-import { projects, projectStatusUpdate, students, tasks, tasksStatusUpdate } from 'src/database/schema';
+import { projects, projectStatusUpdate, students, Task, tasks, tasksStatusUpdate } from 'src/database/schema';
 
 @Injectable()
 export class SupervisorsService {
   private readonly logger = new Logger(SupervisorsService.name);
   constructor(private readonly drizzle: DrizzleService) {}
 
-  async getStudentsBySupervisor(supervisorId: number) {
-    this.logger.log(`Fetching students for supervisor with ID: ${supervisorId}`);
-
-    const supervisorStudents = await this.drizzle.db.query.students.findMany({
+  async getStudents(supervisorId: number) {
+    const result = await this.drizzle.db.query.students.findMany({
       where: eq(students.supervisorId, supervisorId),
       with: {
-        tasks: true,
+        tasks: {
+          columns: {
+            id: true,
+            task: true,
+            description: true,
+            status: true,
+          },
+        },
+        project: {
+          columns: {
+            id: true,
+            title: true,
+            status: true,
+          },
+        },
       },
     });
 
-    const studentProjects = await this.drizzle.db.query.projects.findMany({
-      where: eq(projects.studentId, supervisorId),
-    });
-
-    return supervisorStudents.map((student) => ({
-      studentName: `${student.firstName} ${student.lastName}`,
-      matricNumber: student.matricNumber,
-      email: student.email,
-      project: studentProjects.find((project) => project.studentId === student.id) || null,
-      taskHistory: student.tasks.map((task) => ({
-        taskName: task.task,
-        description: task.description,
-        status: task.status,
-        createdAt: task.createdAt,
-        updatedAt: task.updatedAt,
-      })),
+    return result.map((student) => ({
+      ...student,
+      tasksProgress: this.calculateTasksProgress(student.tasks),
     }));
+  }
+
+  private calculateTasksProgress(tasks: Pick<Task, 'status'>[]) {
+    const totalTasks = tasks.length;
+    if (totalTasks === 0) return 0;
+
+    const statusRanks = { Completed: 1, Pending: 0, Rejected: 0.25, 'Under Review': 0.5 };
+
+    const totalProgress = tasks.reduce((acc, task) => {
+      return acc + (statusRanks[task.status] || 0);
+    }, 0);
+
+    const progressPercentage = (totalProgress / totalTasks) * 100;
+
+    return progressPercentage.toFixed(2);
   }
 
   async getDashboardStats(supervisorId: number) {
