@@ -1,15 +1,14 @@
 import {
+  integer,
   pgTable,
   serial,
   text,
   timestamp,
   varchar,
-  integer,
 } from 'drizzle-orm/pg-core';
 import { timestamps } from '../column.helpers';
 import { students } from './students.schema';
 import { supervisor } from './supervisors.schema';
-import { relations } from 'drizzle-orm';
 
 export const tasks = pgTable('tasks', {
   id: serial().primaryKey(),
@@ -31,13 +30,13 @@ export const tasks = pgTable('tasks', {
   ...timestamps,
 });
 
-export const tasksRelations = relations(tasks, ({ one }) => ({
-  student: one(students, {
-    fields: [tasks.studentId],
-    references: [students.id],
-  }),
-  supervisor: one(supervisor, {
-    fields: [tasks.supervisorId],
-    references: [supervisor.id],
-  }),
-}));
+export const tasksStatusUpdate = pgTable('tasks_status_update', {
+  id: serial().primaryKey(),
+  taskId: integer()
+    .notNull()
+    .references(() => tasks.id, {
+      onDelete: 'cascade',
+    }),
+  status: varchar({ length: 50 }).notNull(),
+  ...timestamps,
+});

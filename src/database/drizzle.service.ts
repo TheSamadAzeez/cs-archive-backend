@@ -9,8 +9,9 @@ import { Pool } from 'pg';
 import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as databaseSchema from './schema';
 import { CONNECTION_POOL } from './database.module-definition';
+import * as relations from './relations';
 
-type DatabaseSchema = typeof databaseSchema;
+type DatabaseSchema = typeof databaseSchema & typeof relations;
 
 @Injectable()
 export class DrizzleService implements OnModuleInit, OnModuleDestroy {
@@ -19,7 +20,7 @@ export class DrizzleService implements OnModuleInit, OnModuleDestroy {
 
   constructor(@Inject(CONNECTION_POOL) private readonly pool: Pool) {
     this.db = drizzle(this.pool, {
-      schema: { ...databaseSchema },
+      schema: { ...databaseSchema, ...relations },
       casing: 'snake_case',
     });
   }

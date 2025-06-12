@@ -7,15 +7,15 @@ import {
   timestamp,
   varchar,
 } from 'drizzle-orm/pg-core';
-import { supervisor } from './supervisors.schema';
 import { students } from './students.schema';
-import { relations } from 'drizzle-orm';
+import { supervisor } from './supervisors.schema';
 
 import { timestamps } from '../column.helpers';
 
+export type ProjectStatus = (typeof ProjectStatusEnum.enumValues)[number];
 export const ProjectStatusEnum = pgEnum('project_status', [
+  'Not Started',
   'In Progress',
-  'Under Review',
   'Completed',
 ]);
 
@@ -23,7 +23,7 @@ export const projects = pgTable('projects', {
   id: serial().primaryKey(),
   title: varchar({ length: 255 }).notNull(),
   description: text().notNull(),
-  status: ProjectStatusEnum().notNull().default('In Progress'),
+  status: ProjectStatusEnum().notNull().default('Not Started'),
   startDate: timestamp().notNull(),
   progressBar: integer().notNull().default(0),
   supervisorId: integer()
@@ -37,13 +37,12 @@ export const projects = pgTable('projects', {
   ...timestamps,
 });
 
-export const projectsRelations = relations(projects, ({ one }) => ({
-  student: one(students, {
-    fields: [projects.studentId],
-    references: [students.id],
-  }),
-  supervisor: one(supervisor, {
-    fields: [projects.supervisorId],
-    references: [supervisor.id],
-  }),
-}));
+export const projectStatusUpdate = pgTable('project_status_update', {
+  id: serial().primaryKey(),
+  projectId: integer()
+    .notNull()
+    .references(() => projects.id, { onDelete: 'cascade' }),
+  status: ProjectStatusEnum().notNull(),
+  updatedBy: varchar({ length: 255 }).notNull(),
+  ...timestamps,
+});
