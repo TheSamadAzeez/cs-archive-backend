@@ -43,6 +43,5 @@ export const projectStatusUpdate = pgTable('project_status_update', {
     .notNull()
     .references(() => projects.id, { onDelete: 'cascade' }),
   status: ProjectStatusEnum().notNull(),
-  updatedBy: varchar({ length: 255 }).notNull(),
   ...timestamps,
 });
