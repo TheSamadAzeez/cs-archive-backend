@@ -1,9 +1,10 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Role, Roles } from 'src/auth/decorators/roles.decorators';
 import { CurrentUser } from 'src/auth/decorators/user.decorator';
 import { SupervisorsService } from './service/supervisors.service';
+import { ReviewTaskDto } from './dto/review-task.dto';
 
 @ApiTags('Supervisors')
 @UseGuards(AuthGuard('jwt'))
@@ -22,6 +23,24 @@ export class SupervisorsController {
   @Get('/students/:studentId')
   async getStudentById(@CurrentUser('userId') supervisorId: number, @Param('studentId') studentId: number) {
     return this.supervisorsService.getStudentById(supervisorId, studentId);
+  }
+
+  @Roles(Role.Supervisor)
+  @Get('/students/:studentId/tasks')
+  async getStudentTasks(@CurrentUser('userId') supervisorId: number, @Param('studentId') studentId: number) {
+    return this.supervisorsService.getStudentTasks(supervisorId, studentId);
+  }
+
+  @Roles(Role.Supervisor)
+  @Get('/students/:studentId/tasks/:taskId')
+  async getStudentTask(@CurrentUser('userId') supervisorId: number, @Param('studentId') studentId: number, @Param('taskId') taskId: number) {
+    return this.supervisorsService.getStudentTask(supervisorId, studentId, taskId);
+  }
+
+  @Roles(Role.Supervisor)
+  @Post('/students/:studentId/tasks/:taskId/review')
+  async reviewTask(@CurrentUser('userId') supervisorId: number, @Param('studentId') studentId: number, @Param('taskId') taskId: number, @Body() reviewTaskDto: ReviewTaskDto) {
+    return this.supervisorsService.reviewTask(supervisorId, studentId, taskId, reviewTaskDto);
   }
 
   @Roles(Role.Supervisor)

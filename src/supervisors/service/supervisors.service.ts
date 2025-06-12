@@ -1,12 +1,71 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { and, count, eq, sql } from 'drizzle-orm';
 import { DrizzleService } from 'src/database/drizzle.service';
-import { projects, projectStatusUpdate, students, Task, tasks, tasksStatusUpdate } from 'src/database/schema';
+import { projects, projectStatusUpdate, students, Task, tasks, tasksStatusUpdate, taskSubmissions } from 'src/database/schema';
+import { ReviewTaskDto, TaskSubmissionStatus } from '../dto/review-task.dto';
 
 @Injectable()
 export class SupervisorsService {
   private readonly logger = new Logger(SupervisorsService.name);
   constructor(private readonly drizzle: DrizzleService) {}
+
+  async getStudentTasks(supervisorId: number, studentId: number) {
+    const result = await this.drizzle.db.query.tasks.findMany({
+      where: and(eq(tasks.studentId, studentId), eq(tasks.supervisorId, supervisorId)),
+      with: {
+        taskSubmissions: true,
+      },
+    });
+    return result;
+  }
+
+  async getStudentTask(supervisorId: number, studentId: number, taskId: number) {
+    const result = await this.drizzle.db.query.tasks.findFirst({
+      where: and(eq(tasks.id, taskId), eq(tasks.studentId, studentId), eq(tasks.supervisorId, supervisorId)),
+      with: {
+        taskSubmissions: true,
+      },
+    });
+    return result;
+  }
+
+  async reviewTask(supervisorId: number, studentId: number, taskId: number, reviewTaskDto: ReviewTaskDto) {
+    return this.drizzle.db.transaction(async (tx) => {
+      const taskSubmission = await tx.query.taskSubmissions.findFirst({
+        where: and(eq(taskSubmissions.id, taskId), eq(taskSubmissions.studentId, studentId), eq(taskSubmissions.supervisorId, supervisorId)),
+      });
+      if (!taskSubmission) {
+        throw new NotFoundException('Task submission not found');
+      }
+
+      // Update task submission
+      await tx
+        .update(taskSubmissions)
+        .set({
+          status: reviewTaskDto.status,
+          feedback: reviewTaskDto.feedback,
+        })
+        .where(eq(taskSubmissions.id, taskId))
+        .returning();
+
+      // Update task
+      const [updatedTask] = await tx
+        .update(tasks)
+        .set({
+          status: reviewTaskDto.status === TaskSubmissionStatus.Approved ? 'Completed' : 'Rejected',
+        })
+        .where(eq(tasks.id, taskSubmission.taskId))
+        .returning();
+
+      // Create task status update
+      await tx.insert(tasksStatusUpdate).values({
+        taskId: taskSubmission.taskId,
+        status: updatedTask.status,
+      });
+
+      return updatedTask;
+    });
+  }
 
   async getStudents(supervisorId: number) {
     const result = await this.drizzle.db.query.students.findMany({

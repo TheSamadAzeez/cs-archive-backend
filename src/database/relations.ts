@@ -25,13 +25,29 @@ export const studentsRelations = relations(schema.students, ({ one, many }) => (
   }),
 }));
 
-export const tasksRelations = relations(schema.tasks, ({ one }) => ({
+export const tasksRelations = relations(schema.tasks, ({ one, many }) => ({
   student: one(schema.students, {
     fields: [schema.tasks.studentId],
     references: [schema.students.id],
   }),
   supervisor: one(schema.supervisor, {
     fields: [schema.tasks.supervisorId],
+    references: [schema.supervisor.id],
+  }),
+  taskSubmissions: many(schema.taskSubmissions),
+}));
+
+export const taskSubmissionsRelations = relations(schema.taskSubmissions, ({ one }) => ({
+  task: one(schema.tasks, {
+    fields: [schema.taskSubmissions.taskId],
+    references: [schema.tasks.id],
+  }),
+  student: one(schema.students, {
+    fields: [schema.taskSubmissions.studentId],
+    references: [schema.students.id],
+  }),
+  supervisor: one(schema.supervisor, {
+    fields: [schema.taskSubmissions.supervisorId],
     references: [schema.supervisor.id],
   }),
 }));
