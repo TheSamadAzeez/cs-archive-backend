@@ -401,6 +401,6 @@ export class SupervisorsService {
     }));
 
     await this.drizzle.db.insert(tasks).values(tasksToInsert);
-    return { message: `Task "${taskName}" assigned to all students under supervisor ${supervisorId}` };
+    return { message: `Task: ${taskName} assigned to all students under supervisor ${supervisorId}` };
   }
 }
