@@ -5,9 +5,9 @@ import { timestamps } from '../column.helpers';
 export const supervisor = pgTable('supervisors', {
   id: serial().primaryKey(),
   email: varchar({ length: 255 }).notNull().unique(),
-  lastname: varchar({ length: 255 }).notNull(),
-  firstname: varchar({ length: 255 }).notNull(),
-  fullname: text().generatedAlwaysAs((): SQL => sql`${supervisor.firstname} || ' ' || ${supervisor.lastname}`),
+  lastName: varchar({ length: 255 }).notNull(),
+  firstName: varchar({ length: 255 }).notNull(),
+  fullName: text().generatedAlwaysAs((): SQL => sql`${supervisor.firstName} || ' ' || ${supervisor.lastName}`),
   role: varchar({ length: 50 }).notNull().default('supervisor'),
   ...timestamps,
 });

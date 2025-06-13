@@ -64,5 +64,5 @@ export class SupervisorLoginDto {
   @IsString()
   @IsNotEmpty()
   @MinLength(2)
-  lastname: string;
+  lastName: string;
 }
