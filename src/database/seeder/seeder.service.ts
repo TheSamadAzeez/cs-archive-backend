@@ -170,42 +170,34 @@ export class SeederService {
       {
         task: 'Literature Review',
         description: 'Research and review existing literature related to the project topic.',
-        actions: 'Submit a comprehensive literature review document.',
       },
       {
         task: 'Project Proposal',
         description: 'Develop a detailed proposal outlining the project objectives, methodology, and timeline.',
-        actions: 'Submit the project proposal for review and approval.',
       },
       {
         task: 'Data Collection',
         description: 'Collect relevant data required for the project analysis.',
-        actions: 'Compile and organize the collected data in a structured format.',
       },
       {
         task: 'Preliminary Analysis',
         description: 'Conduct preliminary analysis of the collected data to identify patterns and insights.',
-        actions: 'Submit a report summarizing the findings from the preliminary analysis.',
       },
       {
         task: 'Implementation',
         description: 'Implement the proposed solution or methodology.',
-        actions: 'Complete the implementation and prepare for testing.',
       },
       {
         task: 'Testing and Validation',
         description: 'Test the implemented solution and validate its performance.',
-        actions: 'Document the testing process and results.',
       },
       {
         task: 'Progress Report',
         description: 'Prepare a report detailing the progress made so far and challenges encountered.',
-        actions: 'Submit the progress report for review.',
       },
       {
         task: 'Final Documentation',
         description: 'Prepare comprehensive documentation of the entire project.',
-        actions: 'Submit the final documentation for review and approval.',
       },
     ];
 
@@ -246,7 +238,6 @@ export class SeederService {
             description: template.description,
             dueDate: dueDate,
             status: status,
-            actions: template.actions,
             studentId: student.id,
             supervisorId: supervisor.id,
           });
