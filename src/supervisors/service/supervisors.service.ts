@@ -378,4 +378,29 @@ export class SupervisorsService {
 
     return `${monthNames[monthIndex]} ${year}`;
   }
+
+  async assignTaskToAllStudents(supervisorId: number, taskName: string, description: string, dueDate: Date) {
+    const studentsList = await this.drizzle.db.query.students.findMany({
+      where: eq(students.supervisorId, supervisorId),
+      columns: { id: true },
+    });
+
+    if (!studentsList.length) {
+      throw new NotFoundException('No students found for this supervisor');
+    }
+
+    const tasksToInsert = studentsList.map((student) => ({
+      studentId: student.id,
+      supervisorId,
+      task: taskName,
+      description,
+      dueDate,
+      status: 'Pending',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }));
+
+    await this.drizzle.db.insert(tasks).values(tasksToInsert);
+    return { message: `Task "${taskName}" assigned to all students under supervisor ${supervisorId}` };
+  }
 }

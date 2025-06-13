@@ -4,7 +4,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Role, Roles } from 'src/auth/decorators/roles.decorators';
 import { CurrentUser } from 'src/auth/decorators/user.decorator';
 import { SupervisorsService } from './service/supervisors.service';
-import { ReviewTaskDto } from './dto/review-task.dto';
+import { AssignTaskDto, ReviewTaskDto } from './dto/review-task.dto';
 
 @ApiTags('Supervisors')
 @UseGuards(AuthGuard('jwt'))
@@ -47,5 +47,11 @@ export class SupervisorsController {
   @Get('/dashboard-stats')
   async getDashboardStats(@CurrentUser('userId') supervisorId: number) {
     return this.supervisorsService.getDashboardStats(supervisorId);
+  }
+
+  @Roles(Role.Supervisor)
+  @Post('/assign-task')
+  async assignTaskToAllStudents(@CurrentUser('userId') supervisorId: number, @Body() assignTaskDto: AssignTaskDto) {
+    return this.supervisorsService.assignTaskToAllStudents(supervisorId, assignTaskDto.taskName, assignTaskDto.description, new Date(assignTaskDto.dueDate));
   }
 }
