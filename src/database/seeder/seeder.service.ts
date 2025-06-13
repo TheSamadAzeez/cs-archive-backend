@@ -20,9 +20,9 @@ export class SeederService {
 
   async seedSupervisors() {
     const SUPERVISORS = [
-      { email: 'prof.smith@university.edu', lastname: 'Smith', firstname: 'John', role: 'supervisor' },
-      { email: 'prof.johnson@university.edu', lastname: 'Johnson', firstname: 'Emily', role: 'supervisor' },
-      { email: 'prof.williams@university.edu', lastname: 'Williams', firstname: 'Robert', role: 'supervisor' },
+      { email: 'prof.smith@university.edu', lastName: 'Smith', firstName: 'John', role: 'supervisor' },
+      { email: 'prof.johnson@university.edu', lastName: 'Johnson', firstName: 'Emily', role: 'supervisor' },
+      { email: 'prof.williams@university.edu', lastName: 'Williams', firstName: 'Robert', role: 'supervisor' },
     ];
 
     for (const supervisorData of SUPERVISORS) {
@@ -31,10 +31,10 @@ export class SeederService {
       });
 
       if (!existingSupervisor) {
-        this.logger.log(`Inserting supervisor: ${supervisorData.firstname} ${supervisorData.lastname}`);
+        this.logger.log(`Inserting supervisor: ${supervisorData.firstName} ${supervisorData.lastName}`);
         await this.drizzle.db.insert(schema.supervisor).values(supervisorData);
       } else {
-        this.logger.log(`Skipping supervisor: ${supervisorData.firstname} ${supervisorData.lastname} (already exists)`);
+        this.logger.log(`Skipping supervisor: ${supervisorData.firstName} ${supervisorData.lastName} (already exists)`);
       }
     }
   }
