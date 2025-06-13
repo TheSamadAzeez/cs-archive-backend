@@ -119,6 +119,15 @@ export class SeederService {
       'Creating augmented reality applications to enhance learning experiences in educational settings.',
     ];
 
+    // Example links for completed projects
+    const exampleLinks = [
+      'https://github.com/example/project1',
+      'https://github.com/example/project2',
+      'https://github.com/example/project3',
+      'https://github.com/example/project4',
+      'https://github.com/example/project5',
+    ];
+
     // Generate one project for each student
     for (let i = 0; i < students.length; i++) {
       const student = students[i];
@@ -139,6 +148,13 @@ export class SeederService {
         const startDate = new Date();
         startDate.setMonth(startDate.getMonth() - Math.floor(Math.random() * 12));
 
+        // If status is 'Completed', assign a finalProjectLink
+        let finalProjectLink: string | null = null;
+        if (status === 'Completed') {
+          // Pick a random example link
+          finalProjectLink = exampleLinks[Math.floor(Math.random() * exampleLinks.length)];
+        }
+
         this.logger.log(`Inserting project for student: ${student.firstName} ${student.lastName}`);
 
         await this.drizzle.db.insert(schema.projects).values({
@@ -148,6 +164,7 @@ export class SeederService {
           startDate: startDate,
           supervisorId: supervisor.id,
           studentId: student.id,
+          finalProjectLink: finalProjectLink,
         });
       } else {
         this.logger.log(`Skipping project for student: ${student.firstName} ${student.lastName} (already exists)`);

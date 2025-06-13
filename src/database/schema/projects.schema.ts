@@ -13,6 +13,7 @@ export const projects = pgTable('projects', {
   description: text().notNull(),
   status: ProjectStatusEnum().notNull().default('Not Started'),
   startDate: timestamp().notNull(),
+  finalProjectLink: text(),
   supervisorId: integer()
     .notNull()
     .references(() => supervisor.id, { onDelete: 'cascade' }),
