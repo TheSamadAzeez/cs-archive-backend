@@ -10,7 +10,6 @@ export const tasks = pgTable('tasks', {
   description: text().notNull(),
   dueDate: timestamp().notNull(),
   status: varchar({ length: 50 }).notNull(),
-  actions: text().notNull(),
   studentId: integer()
     .notNull()
     .references(() => students.id, {

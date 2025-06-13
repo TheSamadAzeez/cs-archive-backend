@@ -23,3 +23,29 @@ export class ReviewTaskDto {
   @IsNotEmpty()
   feedback: string;
 }
+
+export class AssignTaskDto {
+  @ApiProperty({
+    description: 'The name of the task to be assigned',
+    example: 'Complete the project report',
+  })
+  @IsString()
+  @IsNotEmpty()
+  taskName: string;
+
+  @ApiProperty({
+    description: 'The description of the task to be assigned',
+    example: 'Prepare a detailed report on the project progress',
+  })
+  @IsString()
+  @IsNotEmpty()
+  description: string;
+
+  @ApiProperty({
+    description: 'The due date for the task',
+    example: '2023-12-31T23:59:59.999Z',
+  })
+  @IsString()
+  @IsNotEmpty()
+  dueDate: string;
+}
