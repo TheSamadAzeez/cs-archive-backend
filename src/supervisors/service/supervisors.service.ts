@@ -403,4 +403,33 @@ export class SupervisorsService {
     await this.drizzle.db.insert(tasks).values(tasksToInsert);
     return { message: `Task: ${taskName} assigned to all students under supervisor ${supervisorId}` };
   }
+
+  async getAllProjects(supervisorId: number) {
+    const result = await this.drizzle.db.query.projects.findMany({
+      where: eq(projects.supervisorId, supervisorId),
+      orderBy: (projects, { desc }) => [desc(projects.updatedAt)],
+      with: {
+        student: {
+          columns: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            matricNumber: true,
+          },
+        },
+        supervisor: {
+          columns: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+
+    return result.map((project) => ({
+      ...project,
+      supervisorName: project.supervisor ? `${project.supervisor.firstName} ${project.supervisor.lastName}` : null,
+    }));
+  }
 }

@@ -54,4 +54,10 @@ export class SupervisorsController {
   async assignTaskToAllStudents(@CurrentUser('userId') supervisorId: number, @Body() assignTaskDto: AssignTaskDto) {
     return this.supervisorsService.assignTaskToAllStudents(supervisorId, assignTaskDto.taskName, assignTaskDto.description, new Date(assignTaskDto.dueDate));
   }
+
+  @Roles(Role.Supervisor)
+  @Get('/projects')
+  async getAllProjects(@CurrentUser('userId') supervisorId: number) {
+    return this.supervisorsService.getAllProjects(supervisorId);
+  }
 }
