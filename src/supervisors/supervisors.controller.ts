@@ -57,7 +57,7 @@ export class SupervisorsController {
 
   @Roles(Role.Supervisor)
   @Get('/projects')
-  async getAllProjects(@CurrentUser('userId') supervisorId: number) {
-    return this.supervisorsService.getAllProjects(supervisorId);
+  async getAllProjects() {
+    return this.supervisorsService.getAllProjects();
   }
 }

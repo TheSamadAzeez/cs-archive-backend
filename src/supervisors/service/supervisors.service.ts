@@ -404,9 +404,9 @@ export class SupervisorsService {
     return { message: `Task: ${taskName} assigned to all students under supervisor ${supervisorId}` };
   }
 
-  async getAllProjects(supervisorId: number) {
+  async getAllProjects() {
     const result = await this.drizzle.db.query.projects.findMany({
-      where: eq(projects.supervisorId, supervisorId),
+      where: and(eq(projects.status, 'Completed'), sql`${projects.finalProjectLink} IS NOT NULL AND ${projects.finalProjectLink} <> ''`),
       orderBy: (projects, { desc }) => [desc(projects.updatedAt)],
       with: {
         student: {
@@ -430,6 +430,7 @@ export class SupervisorsService {
     return result.map((project) => ({
       ...project,
       supervisorName: project.supervisor ? `${project.supervisor.firstName} ${project.supervisor.lastName}` : null,
+      finalProjectLink: project.finalProjectLink,
     }));
   }
 }
