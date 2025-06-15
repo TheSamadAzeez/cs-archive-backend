@@ -34,15 +34,6 @@ export class CreateSupervisorDto {
   @IsString()
   @IsNotEmpty()
   email: string;
-
-  @ApiProperty({
-    description: 'The password for the supervisor account',
-    example: 'supervisor123',
-    required: true,
-  })
-  @IsString()
-  @IsNotEmpty()
-  password: string;
 }
 
 export class CreateStudentDto {
