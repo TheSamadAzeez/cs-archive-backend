@@ -1,12 +1,13 @@
 import { Controller, Get, Post, Body, UseGuards, Req } from '@nestjs/common';
 import { AuthStudentService } from './services/auth-student.service';
-import { RefreshTokenDto, StudentLoginDto, SupervisorLoginDto } from './dtos/student-auth.dto';
+import { AdminLoginDto, RefreshTokenDto, StudentLoginDto, SupervisorLoginDto } from './dtos/student-auth.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Roles } from './decorators/roles.decorators';
 import { Role } from './decorators/roles.decorators';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthSupervisorService } from './services/auth-supervisor.service';
+import { AuthAdminService } from './services/auth-admin.service';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -14,6 +15,7 @@ export class AuthController {
   constructor(
     private readonly authStudentService: AuthStudentService,
     private readonly authSupervisorService: AuthSupervisorService,
+    private readonly authAdminService: AuthAdminService,
   ) {}
 
   @ApiOperation({ summary: 'Student login' })
@@ -62,6 +64,24 @@ export class AuthController {
   @Roles(Role.Supervisor)
   @Post('supervisor/logout')
   async logoutSupervisor(@Body() body: RefreshTokenDto) {
-    return this.authStudentService.revokeRefreshToken(body.token);
+    return this.authSupervisorService.revokeSupervisorRefreshToken(body.token);
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Login admin' })
+  @ApiResponse({ status: 200, description: 'Admin login successful' })
+  @Post('admin/login')
+  async loginAdmin(@Body() adminLoginDto: AdminLoginDto) {
+    return this.authAdminService.loginAdmin(adminLoginDto);
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Logout admin' })
+  @ApiResponse({ status: 200, description: 'Logged out successfully' })
+  @UseGuards(AuthGuard('jwt'))
+  @Roles(Role.Admin)
+  @Post('admin/logout')
+  async logoutAdmin(@Body() body: RefreshTokenDto) {
+    return this.authAdminService.revokeAdminRefreshToken(body.token);
   }
 }
