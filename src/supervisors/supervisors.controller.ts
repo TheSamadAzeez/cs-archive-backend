@@ -56,7 +56,7 @@ export class SupervisorsController {
   }
 
   @Roles(Role.Supervisor)
-  @Get('/projects')
+  @Get('/all-projects')
   async getAllProjects() {
     return this.supervisorsService.getAllProjects();
   }

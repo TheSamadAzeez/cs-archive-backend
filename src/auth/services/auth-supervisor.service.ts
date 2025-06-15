@@ -42,7 +42,8 @@ export class AuthSupervisorService {
 
   async generateSupervisorTokens(userId: string, roles: string) {
     this.logger.log(`Generating tokens for user ID: ${userId}, Roles: ${roles}`);
-    const payload = { sub: userId, roles };
+    const rolesArray = Array.isArray(roles) ? roles : [roles];
+    const payload = { sub: userId, roles: rolesArray };
     const accessToken = await this.tokenService.generateAccessToken(payload);
     const refreshToken = await this.generateSupervisorRefreshToken(userId);
 
