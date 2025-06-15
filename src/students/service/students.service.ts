@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { DrizzleService } from 'src/database/drizzle.service';
 import { eq, count, and, sql } from 'drizzle-orm';
-import { tasks, tasksStatusUpdate } from 'src/database/schema';
+import { projects, students, tasks, tasksStatusUpdate, taskSubmissions } from 'src/database/schema';
+import { SubmitTaskDto } from '../dtos/student.dto';
 
 @Injectable()
 export class StudentsService {
@@ -96,9 +97,8 @@ export class StudentsService {
     try {
       this.logger.log(`Fetching dashboard stats for student ID: ${studentId}`);
 
-      // Execute queries in parallel for better performance
-      const [taskStatusCounts, taskSummary, tasksMetrics] = await Promise.all([
-        // Get all task status counts in a single query
+      // Get status counts, summary, and metrics as before
+      const [taskStatusCounts, taskSummary, tasksMetrics, allTasks] = await Promise.all([
         this.drizzle.db
           .select({
             status: tasks.status,
@@ -108,7 +108,6 @@ export class StudentsService {
           .where(eq(tasks.studentId, studentId))
           .groupBy(tasks.status),
 
-        // Task summary (last 6 updated tasks)
         this.drizzle.db.query.tasks.findMany({
           where: eq(tasks.studentId, studentId),
           columns: {
@@ -122,11 +121,23 @@ export class StudentsService {
           limit: 6,
         }),
 
-        // Get task metrics
         this.getTasksMetrics(studentId),
+
+        // Get all tasks with status, description, assigned date, and due date
+        this.drizzle.db.query.tasks.findMany({
+          where: eq(tasks.studentId, studentId),
+          columns: {
+            id: true,
+            task: true,
+            status: true,
+            description: true,
+            createdAt: true, // assigned date
+            dueDate: true,
+          },
+          orderBy: (tasks, { desc }) => [desc(tasks.createdAt)],
+        }),
       ]);
 
-      // Process task status counts into the expected format
       const tasksStatus = {
         pending: 0,
         completed: 0,
@@ -145,6 +156,7 @@ export class StudentsService {
         tasksStatus,
         taskSummary,
         tasksMetrics,
+        tasks: allTasks,
       };
     } catch (error) {
       this.logger.error(`Error fetching dashboard stats for student ${studentId}:`, error);
@@ -231,5 +243,141 @@ export class StudentsService {
       },
       orderBy: (tasks, { desc }) => [desc(tasks.createdAt)],
     });
+  }
+
+  async submitTask(studentId: number, taskId: number, submitTaskDto: SubmitTaskDto) {
+    // Fetch the task and ensure it belongs to the student and is pending
+    const task = await this.drizzle.db.query.tasks.findFirst({
+      where: and(eq(tasks.id, taskId), eq(tasks.studentId, studentId), eq(tasks.status, 'Pending')),
+    });
+
+    if (!task) {
+      throw new NotFoundException('Pending task not found for this student');
+    }
+
+    // Create a submission entry
+    const submission = await this.drizzle.db
+      .insert(taskSubmissions)
+      .values({
+        taskId,
+        studentId,
+        supervisorId: task.supervisorId,
+        link: submitTaskDto.link,
+        shortDescription: submitTaskDto.shortDescription,
+        status: 'pending',
+        feedback: '',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+
+    // Optionally, update the task status to 'Under Review'
+    await this.drizzle.db.update(tasks).set({ status: 'Under Review', updatedAt: new Date() }).where(eq(tasks.id, taskId));
+
+    return { message: 'Task submitted successfully', submission };
+  }
+
+  async getStudentProject(studentId: number) {
+    // Fetch student, project, supervisor, and all tasks
+    const student = await this.drizzle.db.query.students.findFirst({
+      where: eq(students.id, studentId),
+      with: {
+        project: {
+          columns: {
+            id: true,
+            title: true,
+            description: true,
+            status: true,
+            supervisorId: true,
+          },
+          with: {
+            supervisor: {
+              columns: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!student || !student.project) {
+      throw new NotFoundException('Project not found for this student');
+    }
+
+    // Fetch all tasks for the student
+    const allTasks = await this.drizzle.db.query.tasks.findMany({
+      where: eq(tasks.studentId, studentId),
+      columns: {
+        id: true,
+        task: true,
+        status: true,
+        description: true,
+        updatedAt: true, // completed date
+      },
+      orderBy: (tasks, { desc }) => [desc(tasks.updatedAt)],
+    });
+
+    // Calculate percentage of completed tasks
+    const totalTasks = allTasks.length;
+    const completedTasks = allTasks.filter((t) => t.status === 'Completed').length;
+    const completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+    // Prepare task history
+    const taskHistory = allTasks.map((task) => ({
+      task: task.task,
+      description: task.description,
+      completedDate: task.status === 'Completed' ? task.updatedAt : null,
+      status: task.status,
+    }));
+
+    // Prepare supervisor name
+    const supervisor = student.project.supervisor;
+    const supervisorName = supervisor ? `${supervisor.firstName} ${supervisor.lastName}` : null;
+
+    return {
+      studentName: `${student.firstName} ${student.lastName}`,
+      matricNumber: student.matricNumber,
+      email: student.email,
+      projectTitle: student.project.title,
+      projectDescription: student.project.description,
+      supervisor: supervisorName,
+      projectStatus: student.project.status,
+      completionPercentage,
+      taskHistory,
+    };
+  }
+
+  async getAllProjects() {
+    const result = await this.drizzle.db.query.projects.findMany({
+      where: and(eq(projects.status, 'Completed'), sql`${projects.finalProjectLink} IS NOT NULL AND ${projects.finalProjectLink} <> ''`),
+      orderBy: (projects, { desc }) => [desc(projects.updatedAt)],
+      with: {
+        student: {
+          columns: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            matricNumber: true,
+          },
+        },
+        supervisor: {
+          columns: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+
+    return result.map((project) => ({
+      ...project,
+      supervisorName: project.supervisor ? `${project.supervisor.firstName} ${project.supervisor.lastName}` : null,
+      finalProjectLink: project.finalProjectLink,
+    }));
   }
 }
