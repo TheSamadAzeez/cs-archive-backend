@@ -10,6 +10,7 @@ import { SupervisorsModule } from './supervisors/supervisors.module';
 import { AuthModule } from './auth/auth.module';
 import { DrizzleModule } from './database/drizzle.module';
 import { ConfigModule } from '@nestjs/config';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ConfigModule } from '@nestjs/config';
     SupervisorsModule,
     AuthModule,
     DrizzleModule.forRootAsync(),
+    AdminModule,
   ],
   controllers: [AppController, StudentsController, SupervisorsController],
   providers: [AppService, StudentsService, SupervisorsService],
