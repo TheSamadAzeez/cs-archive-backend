@@ -1,9 +1,10 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Role, Roles } from 'src/auth/decorators/roles.decorators';
 import { CurrentUser } from 'src/auth/decorators/user.decorator';
 import { StudentsService } from './service/students.service';
+import { SubmitTaskDto } from './dtos/student.dto';
 
 @ApiTags('Students')
 @UseGuards(AuthGuard('jwt'))
@@ -46,5 +47,23 @@ export class StudentsController {
   @Get('/tasks')
   async getAllTasks(@CurrentUser('userId') studentId: number) {
     return this.studentsService.getAllTasks(studentId);
+  }
+
+  @Roles(Role.Student)
+  @Post('/tasks/:taskId/submit')
+  async submitTask(@CurrentUser('userId') studentId: number, @Param('taskId') taskId: number, @Body() submitTaskDto: SubmitTaskDto) {
+    return this.studentsService.submitTask(studentId, Number(taskId), submitTaskDto);
+  }
+
+  @Roles(Role.Student)
+  @Get('/project')
+  async getStudentProject(@CurrentUser('userId') studentId: number) {
+    return this.studentsService.getStudentProject(studentId);
+  }
+
+  @Roles(Role.Supervisor)
+  @Get('/all-projects')
+  async getAllProjects() {
+    return this.studentsService.getAllProjects();
   }
 }
