@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { eq, isNull } from 'drizzle-orm';
 import { DrizzleService } from 'src/database/drizzle.service';
-import { projects } from 'src/database/schema';
+import { projects, students, supervisor } from 'src/database/schema';
+import { CreateStudentDto, CreateSupervisorDto } from './dto/create-user.dto';
 
 @Injectable()
 export class AdminService {
@@ -104,5 +105,68 @@ export class AdminService {
         },
       },
     });
+  }
+
+  async getDashboardStats() {
+    // Get all counts in parallel for efficiency
+    const [studentsList, supervisorsList, assignedStudentsList, unassignedStudentsList, completedProjectsList, inProgressProjectsList, notStartedProjectsList] = await Promise.all([
+      this.drizzle.db.query.students.findMany(),
+      this.drizzle.db.query.supervisor.findMany(),
+      this.drizzle.db.query.students.findMany({
+        where: (students) => isNull(students.supervisorId),
+      }),
+      this.drizzle.db.query.students.findMany({
+        where: (students) => isNull(students.supervisorId),
+      }),
+      this.drizzle.db.query.projects.findMany({
+        where: (projects) => eq(projects.status, 'Completed'),
+      }),
+      this.drizzle.db.query.projects.findMany({
+        where: (projects) => eq(projects.status, 'In Progress'),
+      }),
+      this.drizzle.db.query.projects.findMany({
+        where: (projects) => eq(projects.status, 'Not Started'),
+      }),
+    ]);
+
+    return {
+      totalStudents: studentsList.length,
+      totalSupervisors: supervisorsList.length,
+      assignedStudents: assignedStudentsList.length,
+      unassignedStudents: unassignedStudentsList.length,
+      completedProjects: completedProjectsList.length,
+      inProgressProjects: inProgressProjectsList.length,
+      notStartedProjects: notStartedProjectsList.length,
+    };
+  }
+
+  async addSupervisor(dto: CreateSupervisorDto) {
+    const supervisors = await this.drizzle.db
+      .insert(supervisor)
+      .values({
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        email: dto.email,
+        role: 'supervisor',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+    return supervisors;
+  }
+
+  async addStudent(dto: CreateStudentDto) {
+    const studentData: any = {
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      matricNumber: dto.matricNumber,
+      email: dto.email,
+      role: 'student',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      supervisorId: typeof dto.supervisorId === 'number' ? dto.supervisorId : undefined,
+    };
+    const student = await this.drizzle.db.insert(students).values(studentData).returning();
+    return student;
   }
 }
