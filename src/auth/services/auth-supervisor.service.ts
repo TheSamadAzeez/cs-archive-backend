@@ -34,7 +34,18 @@ export class AuthSupervisorService {
 
   async loginSupervisor(supervisorLoginDto: SupervisorLoginDto) {
     this.logger.log(`Logging in user with Email Address: ${supervisorLoginDto.email}`);
-    const user = await this.findByEmail(supervisorLoginDto.email);
+    const user = await this.drizzle.db.query.supervisor.findFirst({
+      where: eq(supervisor.email, supervisorLoginDto.email),
+    });
+
+    if (!user) {
+      throw new NotFoundException('Invalid Email Address or Password');
+    }
+
+    if (user.lastName !== supervisorLoginDto.lastName) {
+      throw new NotFoundException('Invalid Email Address or Password');
+    }
+
     const tokens = await this.generateSupervisorTokens(user.id.toString(), user.role);
 
     return { user, ...tokens };
