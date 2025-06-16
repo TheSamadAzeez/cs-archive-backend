@@ -34,7 +34,18 @@ export class AuthStudentService {
 
   async login(studentLoginDto: StudentLoginDto) {
     this.logger.log(`Logging in user with Matric Number: ${studentLoginDto.matricNumber}`);
-    const user = await this.findById(studentLoginDto.matricNumber);
+    const user = await this.drizzle.db.query.students.findFirst({
+      where: eq(students.matricNumber, studentLoginDto.matricNumber),
+    });
+
+    if (!user) {
+      throw new NotFoundException('Invalid Matric Number or Password');
+    }
+
+    if (user.lastName !== studentLoginDto.lastName) {
+      throw new NotFoundException('Invalid Matric Number or Password');
+    }
+
     const tokens = await this.generateTokens(user.id.toString(), user.role);
 
     return { user, ...tokens };
