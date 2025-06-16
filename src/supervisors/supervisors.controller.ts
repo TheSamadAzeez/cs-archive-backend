@@ -60,4 +60,10 @@ export class SupervisorsController {
   async getAllProjects() {
     return this.supervisorsService.getAllProjects();
   }
+
+  @Roles(Role.Supervisor)
+  @Get('/assigned-tasks')
+  async getAllAssignedTasks(@CurrentUser('userId') supervisorId: number) {
+    return this.supervisorsService.getAllAssignedTasks(supervisorId);
+  }
 }
