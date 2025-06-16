@@ -404,6 +404,33 @@ export class SupervisorsService {
     return { message: `Task: ${taskName} assigned to all students under supervisor ${supervisorId}` };
   }
 
+  async getAllAssignedTasks(supervisorId: number) {
+    return this.drizzle.db.query.tasks.findMany({
+      where: eq(tasks.supervisorId, supervisorId),
+      columns: {
+        id: true,
+        task: true,
+        description: true,
+        status: true,
+        studentId: true,
+        dueDate: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: (tasks, { desc }) => [desc(tasks.createdAt)],
+      with: {
+        student: {
+          columns: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            matricNumber: true,
+          },
+        },
+      },
+    });
+  }
+
   async getAllProjects() {
     const result = await this.drizzle.db.query.projects.findMany({
       where: and(eq(projects.status, 'Completed'), sql`${projects.finalProjectLink} IS NOT NULL AND ${projects.finalProjectLink} <> ''`),
