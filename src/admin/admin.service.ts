@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { eq, isNull } from 'drizzle-orm';
 import { DrizzleService } from 'src/database/drizzle.service';
 import { projects, students, supervisor } from 'src/database/schema';
-import { CreateStudentDto, CreateSupervisorDto } from './dto/create-user.dto';
+import { CreateStudentDto, CreateSupervisorDto, UpdateStudentDto } from './dto/create-user.dto';
 
 @Injectable()
 export class AdminService {
@@ -11,6 +11,33 @@ export class AdminService {
   // Get all students
   async getAllStudents() {
     return this.drizzle.db.query.students.findMany();
+  }
+
+  async getAllStudentsWithSupervisors() {
+    const students = await this.drizzle.db.query.students.findMany({
+      columns: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        matricNumber: true,
+        email: true,
+      },
+      with: {
+        supervisor: {
+          columns: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+
+    return students.map((student) => ({
+      ...student,
+      supervisorName: student.supervisor ? `${student.supervisor.firstName} ${student.supervisor.lastName}` : null,
+      status: student.supervisor ? 'assigned' : 'unassigned',
+    }));
   }
 
   // Get all supervisors
@@ -168,5 +195,26 @@ export class AdminService {
     };
     const student = await this.drizzle.db.insert(students).values(studentData).returning();
     return student;
+  }
+
+  async updateStudent(id: number, dto: UpdateStudentDto) {
+    const updated = await this.drizzle.db
+      .update(students)
+      .set({ ...dto, updatedAt: new Date() })
+      .where(eq(students.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteStudent(id: number) {
+    const deletedStudent = await this.drizzle.db.delete(students).where(eq(students.id, id)).returning();
+    await this.drizzle.db.update(students).set({ deletedAt: new Date() }).where(eq(students.id, id));
+    return deletedStudent;
+  }
+
+  async deleteSupervisor(id: number) {
+    const deletedSupervisor = await this.drizzle.db.delete(supervisor).where(eq(supervisor.id, id)).returning();
+    await this.drizzle.db.update(supervisor).set({ deletedAt: new Date() }).where(eq(supervisor.id, id));
+    return deletedSupervisor;
   }
 }

@@ -3,7 +3,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Role, Roles } from 'src/auth/decorators/roles.decorators';
 import { AdminService } from './admin.service';
-import { CreateStudentDto, CreateSupervisorDto } from './dto/create-user.dto';
+import { CreateStudentDto, CreateSupervisorDto, DeleteByIdDto, UpdateStudentDto } from './dto/create-user.dto';
 
 @ApiTags('Admin')
 @UseGuards(AuthGuard('jwt'))
@@ -16,6 +16,12 @@ export class AdminController {
   @Get('/students')
   async getAllStudents() {
     return this.adminService.getAllStudents();
+  }
+
+  @Roles(Role.Admin)
+  @Get('/students-with-supervisors')
+  async getAllStudentsWithSupervisors() {
+    return this.adminService.getAllStudentsWithSupervisors();
   }
 
   @Roles(Role.Admin)
@@ -70,5 +76,23 @@ export class AdminController {
   @Post('/supervisors')
   async addSupervisor(@Body() dto: CreateSupervisorDto) {
     return this.adminService.addSupervisor(dto);
+  }
+
+  @Roles(Role.Admin)
+  @Post('/update-student')
+  async updateStudent(@Body() dto: UpdateStudentDto) {
+    return this.adminService.updateStudent(dto.id, dto);
+  }
+
+  @Roles(Role.Admin)
+  @Post('/delete-student')
+  async deleteStudent(@Body() dto: DeleteByIdDto) {
+    return this.adminService.deleteStudent(Number(dto.id));
+  }
+
+  @Roles(Role.Admin)
+  @Post('/delete-supervisor')
+  async deleteSupervisor(@Body() dto: DeleteByIdDto) {
+    return this.adminService.deleteSupervisor(Number(dto.id));
   }
 }
