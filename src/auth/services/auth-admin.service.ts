@@ -33,7 +33,18 @@ export class AuthAdminService {
 
   async loginAdmin(adminLoginDto: AdminLoginDto) {
     this.logger.log(`Logging in user with Email Address: ${adminLoginDto.email}`);
-    const user = await this.findByEmail(adminLoginDto.email);
+    const user = await this.drizzle.db.query.admin.findFirst({
+      where: eq(admin.email, adminLoginDto.email),
+    });
+
+    if (!user) {
+      throw new NotFoundException('Invalid Email Address or Password');
+    }
+
+    if (user.lastName !== adminLoginDto.lastName) {
+      throw new NotFoundException('Invalid Email Address or Password');
+    }
+
     const tokens = await this.generateAdminTokens(user.id.toString(), user.role);
 
     return { user, ...tokens };
