@@ -31,8 +31,9 @@ export class SupervisorsService {
 
   async reviewTask(supervisorId: number, studentId: number, taskId: number, reviewTaskDto: ReviewTaskDto) {
     return this.drizzle.db.transaction(async (tx) => {
+      // Find the submission by taskId, studentId, supervisorId
       const taskSubmission = await tx.query.taskSubmissions.findFirst({
-        where: and(eq(taskSubmissions.id, taskId), eq(taskSubmissions.studentId, studentId), eq(taskSubmissions.supervisorId, supervisorId)),
+        where: and(eq(taskSubmissions.taskId, taskId), eq(taskSubmissions.studentId, studentId), eq(taskSubmissions.supervisorId, supervisorId)),
       });
       if (!taskSubmission) {
         throw new NotFoundException('Task submission not found');
@@ -45,7 +46,7 @@ export class SupervisorsService {
           status: reviewTaskDto.status,
           feedback: reviewTaskDto.feedback,
         })
-        .where(eq(taskSubmissions.id, taskId))
+        .where(eq(taskSubmissions.id, taskSubmission.id))
         .returning();
 
       // Update task
