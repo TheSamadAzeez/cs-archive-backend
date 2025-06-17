@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { eq, isNull, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { DrizzleService } from 'src/database/drizzle.service';
 import { projects, students, supervisor } from 'src/database/schema';
 import { CreateStudentDto, CreateSupervisorDto, UpdateStudentDto } from './dto/create-user.dto';
@@ -138,10 +138,10 @@ export class AdminService {
       this.drizzle.db.query.students.findMany(),
       this.drizzle.db.query.supervisor.findMany(),
       this.drizzle.db.query.students.findMany({
-        where: (students) => isNull(students.supervisorId),
+        where: sql`${students.supervisorId} IS NOT NULL`,
       }),
       this.drizzle.db.query.students.findMany({
-        where: (students) => isNull(students.supervisorId),
+        where: sql`${students.supervisorId} IS NULL`,
       }),
       this.drizzle.db.query.projects.findMany({
         where: (projects) => eq(projects.status, 'Completed'),
