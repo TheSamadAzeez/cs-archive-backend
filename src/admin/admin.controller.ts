@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Patch, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Role, Roles } from 'src/auth/decorators/roles.decorators';
@@ -79,19 +79,19 @@ export class AdminController {
   }
 
   @Roles(Role.Admin)
-  @Post('/update-student')
+  @Patch('/update-student')
   async updateStudent(@Body() dto: UpdateStudentDto) {
     return this.adminService.updateStudent(dto.id, dto);
   }
 
   @Roles(Role.Admin)
-  @Post('/delete-student')
+  @Delete('/delete-student')
   async deleteStudent(@Body() dto: DeleteByIdDto) {
     return this.adminService.deleteStudent(Number(dto.id));
   }
 
   @Roles(Role.Admin)
-  @Post('/delete-supervisor')
+  @Delete('/delete-supervisor')
   async deleteSupervisor(@Body() dto: DeleteByIdDto) {
     return this.adminService.deleteSupervisor(Number(dto.id));
   }
