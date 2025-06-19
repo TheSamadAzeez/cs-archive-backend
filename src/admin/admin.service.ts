@@ -8,9 +8,38 @@ import { CreateStudentDto, CreateSupervisorDto, UpdateStudentDto } from './dto/c
 export class AdminService {
   constructor(private readonly drizzle: DrizzleService) {}
 
-  // Get all students
+  // Get all students with their supervisors and projects
   async getAllStudents() {
-    return this.drizzle.db.query.students.findMany();
+    const studentsList = await this.drizzle.db.query.students.findMany({
+      columns: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        matricNumber: true,
+        email: true,
+      },
+      with: {
+        supervisor: {
+          columns: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+        project: {
+          columns: {
+            title: true,
+          },
+        },
+      },
+      orderBy: (students, { asc }) => [asc(students.lastName)],
+    });
+
+    return studentsList.map((student) => ({
+      ...student,
+      supervisorName: student.supervisor ? `${student.supervisor.firstName} ${student.supervisor.lastName}` : null,
+      projectTitle: student.project ? student.project.title : null,
+      status: student.supervisor ? 'assigned' : 'unassigned',
+    }));
   }
 
   async getAllStudentsWithSupervisors() {
@@ -191,17 +220,79 @@ export class AdminService {
       updatedAt: new Date(),
       supervisorId: typeof dto.supervisorId === 'number' ? dto.supervisorId : undefined,
     };
-    const student = await this.drizzle.db.insert(students).values(studentData).returning();
-    return student;
+    const [student] = await this.drizzle.db.insert(students).values(studentData).returning();
+
+    // Fetch with supervisor and project info
+    const fullStudent = await this.drizzle.db.query.students.findFirst({
+      where: eq(students.id, student.id),
+      columns: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        matricNumber: true,
+        email: true,
+      },
+      with: {
+        supervisor: {
+          columns: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+        project: {
+          columns: {
+            title: true,
+          },
+        },
+      },
+    });
+
+    return {
+      ...fullStudent,
+      supervisorName: fullStudent?.supervisor ? `${fullStudent.supervisor.firstName} ${fullStudent.supervisor.lastName}` : null,
+      projectTitle: fullStudent?.project ? fullStudent.project.title : null,
+      status: fullStudent?.supervisor ? 'assigned' : 'unassigned',
+    };
   }
 
   async updateStudent(id: number, dto: UpdateStudentDto) {
-    const updated = await this.drizzle.db
+    await this.drizzle.db
       .update(students)
       .set({ ...dto, updatedAt: new Date() })
       .where(eq(students.id, id))
       .returning();
-    return updated;
+
+    // Fetch with supervisor and project info
+    const fullStudent = await this.drizzle.db.query.students.findFirst({
+      where: eq(students.id, id),
+      columns: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        matricNumber: true,
+        email: true,
+      },
+      with: {
+        supervisor: {
+          columns: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+        project: {
+          columns: {
+            title: true,
+          },
+        },
+      },
+    });
+
+    return {
+      ...fullStudent,
+      supervisorName: fullStudent?.supervisor ? `${fullStudent.supervisor.firstName} ${fullStudent.supervisor.lastName}` : null,
+      projectTitle: fullStudent?.project ? fullStudent.project.title : null,
+      status: fullStudent?.supervisor ? 'assigned' : 'unassigned',
+    };
   }
 
   async deleteStudent(id: number) {
