@@ -89,6 +89,24 @@ export class CreateStudentDto {
   @IsString()
   @IsNotEmpty({ message: 'Supervisor ID is optional but should be a number if provided.' })
   supervisorId?: number;
+
+  @ApiProperty({
+    description: 'The title of the project assigned to the student',
+    example: 'AI Research Project',
+    required: false,
+  })
+  @IsString()
+  @IsNotEmpty({ message: 'Project title is optional but should be a string if provided.' })
+  projectTitle: string;
+
+  @ApiProperty({
+    description: 'The description of the project assigned to the student',
+    example: 'This project involves researching AI algorithms.',
+    required: false,
+  })
+  @IsString()
+  @IsNotEmpty({ message: 'Project description is optional but should be a string if provided.' })
+  projectDescription: string;
 }
 
 export class DeleteByIdDto {

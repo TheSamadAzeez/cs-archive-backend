@@ -21,7 +21,7 @@ export const studentsRelations = relations(schema.students, ({ one, many }) => (
   tasks: many(schema.tasks),
   project: one(schema.projects, {
     fields: [schema.students.id],
-    references: [schema.projects.id],
+    references: [schema.projects.studentId],
   }),
 }));
 

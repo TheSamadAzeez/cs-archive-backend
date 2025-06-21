@@ -218,9 +218,21 @@ export class AdminService {
       role: 'student',
       createdAt: new Date(),
       updatedAt: new Date(),
-      supervisorId: typeof dto.supervisorId === 'number' ? dto.supervisorId : undefined,
+      supervisorId: Number(dto.supervisorId) || null, // Ensure supervisorId is a number or null
     };
     const [student] = await this.drizzle.db.insert(students).values(studentData).returning();
+
+    if (!student) {
+      throw new Error('Failed to create student');
+    }
+
+    await this.drizzle.db.insert(projects).values({
+      title: dto.projectTitle,
+      description: dto.projectDescription,
+      startDate: new Date(),
+      studentId: student.id,
+      supervisorId: student.supervisorId,
+    });
 
     // Fetch with supervisor and project info
     const fullStudent = await this.drizzle.db.query.students.findFirst({
