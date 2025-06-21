@@ -49,18 +49,18 @@ export class SeederService {
     }
 
     const STUDENTS = [
-      { matricNumber: 'CS2023001', lastName: 'Johnson', firstName: 'Michael', email: 'michael.johnson@student.edu', supervisorId: supervisors[0].id },
-      { matricNumber: 'CS2023002', lastName: 'Williams', firstName: 'Emma', email: 'emma.williams@student.edu', supervisorId: supervisors[1].id },
-      { matricNumber: 'CS2023003', lastName: 'Brown', firstName: 'James', email: 'james.brown@student.edu', supervisorId: supervisors[2].id },
-      { matricNumber: 'CS2023004', lastName: 'Jones', firstName: 'Olivia', email: 'olivia.jones@student.edu', supervisorId: supervisors[0].id },
-      { matricNumber: 'CS2023005', lastName: 'Davis', firstName: 'William', email: 'william.davis@student.edu', supervisorId: supervisors[1].id },
-      { matricNumber: 'CS2023006', lastName: 'Miller', firstName: 'Sophia', email: 'sophia.miller@student.edu', supervisorId: supervisors[2].id },
-      { matricNumber: 'CS2023007', lastName: 'Wilson', firstName: 'Benjamin', email: 'benjamin.wilson@student.edu', supervisorId: supervisors[0].id },
-      { matricNumber: 'CS2023008', lastName: 'Moore', firstName: 'Isabella', email: 'isabella.moore@student.edu', supervisorId: supervisors[1].id },
-      { matricNumber: 'CS2023009', lastName: 'Taylor', firstName: 'Mason', email: 'mason.taylor@student.edu', supervisorId: supervisors[2].id },
-      { matricNumber: 'CS2023010', lastName: 'Anderson', firstName: 'Charlotte', email: 'charlotte.anderson@student.edu', supervisorId: supervisors[0].id },
-      { matricNumber: 'CS2023011', lastName: 'Thomas', firstName: 'Elijah', email: 'elijah.thomas@student.edu', supervisorId: supervisors[1].id },
-      { matricNumber: 'CS2023012', lastName: 'Jackson', firstName: 'Amelia', email: 'amelia.jackson@student.edu', supervisorId: supervisors[2].id },
+      { matricNumber: '210591001', lastName: 'Johnson', firstName: 'Michael', email: 'michael.johnson@student.edu', supervisorId: supervisors[0].id },
+      { matricNumber: '210591002', lastName: 'Williams', firstName: 'Emma', email: 'emma.williams@student.edu', supervisorId: supervisors[1].id },
+      { matricNumber: '210591003', lastName: 'Brown', firstName: 'James', email: 'james.brown@student.edu', supervisorId: supervisors[2].id },
+      { matricNumber: '210591004', lastName: 'Jones', firstName: 'Olivia', email: 'olivia.jones@student.edu', supervisorId: supervisors[0].id },
+      { matricNumber: '210591005', lastName: 'Davis', firstName: 'William', email: 'william.davis@student.edu', supervisorId: supervisors[1].id },
+      { matricNumber: '210591006', lastName: 'Miller', firstName: 'Sophia', email: 'sophia.miller@student.edu', supervisorId: supervisors[2].id },
+      { matricNumber: '210591007', lastName: 'Wilson', firstName: 'Benjamin', email: 'benjamin.wilson@student.edu', supervisorId: supervisors[0].id },
+      { matricNumber: '210591008', lastName: 'Moore', firstName: 'Isabella', email: 'isabella.moore@student.edu', supervisorId: supervisors[1].id },
+      { matricNumber: '210591009', lastName: 'Taylor', firstName: 'Mason', email: 'mason.taylor@student.edu', supervisorId: supervisors[2].id },
+      { matricNumber: '210591010', lastName: 'Anderson', firstName: 'Charlotte', email: 'charlotte.anderson@student.edu', supervisorId: supervisors[0].id },
+      { matricNumber: '210591011', lastName: 'Thomas', firstName: 'Elijah', email: 'elijah.thomas@student.edu', supervisorId: supervisors[1].id },
+      { matricNumber: '210591012', lastName: 'Jackson', firstName: 'Amelia', email: 'amelia.jackson@student.edu', supervisorId: supervisors[2].id },
     ];
 
     // Insert students directly with their data
