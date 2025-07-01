@@ -241,6 +241,20 @@ export class StudentsService {
         createdAt: true,
         dueDate: true,
       },
+      with: {
+        taskSubmissions: {
+          columns: {
+            id: true,
+            link: true,
+            shortDescription: true,
+            status: true,
+            feedback: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+          where: eq(taskSubmissions.studentId, studentId),
+        },
+      },
       orderBy: (tasks, { desc }) => [desc(tasks.createdAt)],
     });
   }
