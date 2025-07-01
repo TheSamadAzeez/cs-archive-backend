@@ -67,7 +67,7 @@ export class StudentsController {
     return this.studentsService.submitProject(studentId, finalProjectLink);
   }
 
-  @Roles(Role.Supervisor)
+  @Roles(Role.Student)
   @Get('/all-projects')
   async getAllProjects() {
     return this.studentsService.getAllProjects();
