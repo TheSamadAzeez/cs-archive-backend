@@ -49,11 +49,21 @@ export class SupervisorsService {
         .where(eq(taskSubmissions.id, taskSubmission.id))
         .returning();
 
+      // Decide new task status
+      let newTaskStatus: string;
+      if (reviewTaskDto.status === TaskSubmissionStatus.Approved) {
+        newTaskStatus = 'Completed';
+      } else if (reviewTaskDto.status === TaskSubmissionStatus.Rejected) {
+        newTaskStatus = 'Pending'; // Reassign to student
+      } else {
+        newTaskStatus = reviewTaskDto.status;
+      }
+
       // Update task
       const [updatedTask] = await tx
         .update(tasks)
         .set({
-          status: reviewTaskDto.status === TaskSubmissionStatus.Approved ? 'Completed' : 'Rejected',
+          status: newTaskStatus,
         })
         .where(eq(tasks.id, taskSubmission.taskId))
         .returning();
