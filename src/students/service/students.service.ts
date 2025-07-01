@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger, ForbiddenException } from '@nestjs/common';
 import { DrizzleService } from 'src/database/drizzle.service';
 import { eq, count, and, sql } from 'drizzle-orm';
 import { projects, students, tasks, tasksStatusUpdate, taskSubmissions } from 'src/database/schema';
@@ -363,6 +363,40 @@ export class StudentsService {
       completionPercentage,
       taskHistory,
     };
+  }
+
+  async submitProject(studentId: number, finalProjectLink: string) {
+    // Get all tasks for the student
+    const tasksList = await this.drizzle.db.query.tasks.findMany({
+      where: eq(tasks.studentId, studentId),
+      columns: { status: true },
+    });
+
+    // Check if there are exactly 5 tasks and all are completed
+    if (tasksList.length !== 5 || tasksList.some((task) => task.status !== 'Completed')) {
+      throw new ForbiddenException('You can only submit your project when all 5 tasks are completed.');
+    }
+
+    // Find the student's project
+    const project = await this.drizzle.db.query.projects.findFirst({
+      where: eq(projects.studentId, studentId),
+    });
+    if (!project) {
+      throw new NotFoundException('Project not found for this student');
+    }
+
+    // Update the project with the final link and set status to Completed
+    const [updatedProject] = await this.drizzle.db
+      .update(projects)
+      .set({
+        finalProjectLink,
+        status: 'Completed',
+        updatedAt: new Date(),
+      })
+      .where(eq(projects.id, project.id))
+      .returning();
+
+    return updatedProject;
   }
 
   async getAllProjects() {
