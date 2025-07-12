@@ -1,17 +1,21 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Role, Roles } from 'src/auth/decorators/roles.decorators';
 import { CurrentUser } from 'src/auth/decorators/user.decorator';
 import { SupervisorsService } from './service/supervisors.service';
 import { AssignTaskDto, ReviewTaskDto } from './dto/review-task.dto';
+import { NotificationsService } from 'src/notifications/notifications.service';
 
 @ApiTags('Supervisors')
 @UseGuards(AuthGuard('jwt'))
 @ApiBearerAuth()
 @Controller('supervisors')
 export class SupervisorsController {
-  constructor(private readonly supervisorsService: SupervisorsService) {}
+  constructor(
+    private readonly supervisorsService: SupervisorsService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   @Roles(Role.Supervisor)
   @Get('/students')
@@ -65,5 +69,24 @@ export class SupervisorsController {
   @Get('/assigned-tasks')
   async getAllAssignedTasks(@CurrentUser('userId') supervisorId: number) {
     return this.supervisorsService.getAllAssignedTasks(supervisorId);
+  }
+
+  @Roles(Role.Supervisor)
+  @Get('/notifications')
+  async getNotifications(@CurrentUser('userId') supervisorId: number) {
+    return this.notificationsService.getNotifications(supervisorId, 'supervisor');
+  }
+
+  @Roles(Role.Supervisor)
+  @Patch('/notifications/:id/read')
+  async markNotificationAsRead(@CurrentUser('userId') supervisorId: number, @Param('id') notificationId: number) {
+    return this.notificationsService.markAsRead(notificationId, supervisorId);
+  }
+
+  @Roles(Role.Supervisor)
+  @Get('/notifications/unread-count')
+  async getUnreadCount(@CurrentUser('userId') supervisorId: number) {
+    const count = await this.notificationsService.getUnreadCount(supervisorId, 'supervisor');
+    return { unreadCount: count };
   }
 }

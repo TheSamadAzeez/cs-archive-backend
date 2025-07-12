@@ -3,11 +3,15 @@ import { and, count, eq, sql } from 'drizzle-orm';
 import { DrizzleService } from 'src/database/drizzle.service';
 import { projects, projectStatusUpdate, students, Task, tasks, tasksStatusUpdate, taskSubmissions } from 'src/database/schema';
 import { ReviewTaskDto, TaskSubmissionStatus } from '../dto/review-task.dto';
+import { NotificationsService, NotificationType } from 'src/notifications/notifications.service';
 
 @Injectable()
 export class SupervisorsService {
   private readonly logger = new Logger(SupervisorsService.name);
-  constructor(private readonly drizzle: DrizzleService) {}
+  constructor(
+    private readonly drizzle: DrizzleService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   async getStudentTasks(supervisorId: number, studentId: number) {
     const result = await this.drizzle.db.query.tasks.findMany({
@@ -97,6 +101,28 @@ export class SupervisorsService {
         taskId: taskSubmission.taskId,
         status: updatedTask.status,
       });
+
+      if (reviewTaskDto.status === TaskSubmissionStatus.Approved) {
+        await this.notificationsService.createNotification(
+          studentId,
+          'student',
+          NotificationType.TASK_APPROVED,
+          'Task Approved!',
+          `Your task submission has been approved. Feedback: ${reviewTaskDto.feedback || 'Good work!'}`,
+          taskId,
+          'task',
+        );
+      } else if (reviewTaskDto.status === TaskSubmissionStatus.Rejected) {
+        await this.notificationsService.createNotification(
+          studentId,
+          'student',
+          NotificationType.TASK_REJECTED,
+          'Task Needs Revision',
+          `Your task submission needs revision. Feedback: ${reviewTaskDto.feedback || 'Please review and resubmit.'}`,
+          taskId,
+          'task',
+        );
+      }
 
       return updatedTask;
     });
@@ -436,6 +462,17 @@ export class SupervisorsService {
     }));
 
     await this.drizzle.db.insert(tasks).values(tasksToInsert);
+
+    for (const student of studentsList) {
+      await this.notificationsService.createNotification(
+        student.id,
+        'student',
+        NotificationType.TASK_ASSIGNED,
+        'New Task Assigned',
+        `You have been assigned a new task: "${taskName}". Due date: ${dueDate.toDateString()}`,
+      );
+    }
+
     return { message: `Task: ${taskName} assigned to all students under supervisor ${supervisorId}` };
   }
 
