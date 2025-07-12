@@ -68,7 +68,31 @@ export class SupervisorsService {
         .where(eq(tasks.id, taskSubmission.taskId))
         .returning();
 
-      // Create task status update
+      // Check if we need to update project status to "In Progress"
+      if (updatedTask.status === 'Completed') {
+        const project = await tx.query.projects.findFirst({
+          where: eq(projects.studentId, studentId),
+        });
+
+        if (project && project.status === 'Not Started') {
+          // Insert into project status update table
+          await tx.insert(projectStatusUpdate).values({
+            projectId: project.id,
+            status: 'In Progress',
+            createdAt: new Date(),
+          });
+
+          // Actually update the project's status field
+          await tx
+            .update(projects)
+            .set({
+              status: 'In Progress',
+              updatedAt: new Date(),
+            })
+            .where(eq(projects.id, project.id));
+        }
+      }
+
       await tx.insert(tasksStatusUpdate).values({
         taskId: taskSubmission.taskId,
         status: updatedTask.status,
