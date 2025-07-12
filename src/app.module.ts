@@ -12,6 +12,7 @@ import { DrizzleModule } from './database/drizzle.module';
 import { ConfigModule } from '@nestjs/config';
 import { AdminModule } from './admin/admin.module';
 import { EmailModule } from './email/email.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { EmailModule } from './email/email.module';
     DrizzleModule.forRootAsync(),
     AdminModule,
     EmailModule,
+    NotificationsModule,
   ],
   controllers: [AppController, StudentsController, SupervisorsController],
   providers: [AppService, StudentsService, SupervisorsService],
