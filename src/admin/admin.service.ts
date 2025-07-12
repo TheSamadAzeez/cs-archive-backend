@@ -3,10 +3,14 @@ import { eq, sql } from 'drizzle-orm';
 import { DrizzleService } from 'src/database/drizzle.service';
 import { projects, students, supervisor } from 'src/database/schema';
 import { CreateStudentDto, CreateSupervisorDto, UpdateStudentDto } from './dto/create-user.dto';
+import { NotificationsService, NotificationType } from 'src/notifications/notifications.service';
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly drizzle: DrizzleService) {}
+  constructor(
+    private readonly drizzle: DrizzleService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   // Get all students with their supervisors and projects
   async getAllStudents() {
@@ -222,49 +226,81 @@ export class AdminService {
     };
     const [student] = await this.drizzle.db.insert(students).values(studentData).returning();
 
-    if (!student) {
-      throw new Error('Failed to create student');
+    await this.notificationsService.createNotification(
+      student.id,
+      'student',
+      NotificationType.STUDENT_CREATED,
+      'Welcome to CS Archive!',
+      'Your account has been created successfully. You can now access your dashboard.',
+      student.id,
+      'student',
+    );
+
+    if (dto.supervisorId) {
+      await this.notificationsService.createNotification(
+        student.id,
+        'student',
+        NotificationType.SUPERVISOR_ASSIGNED,
+        'Supervisor Assigned',
+        `You have been assigned a supervisor. You can now start working on your project.`,
+        dto.supervisorId,
+        'supervisor',
+      );
+
+      await this.notificationsService.createNotification(
+        dto.supervisorId,
+        'supervisor',
+        NotificationType.STUDENT_CREATED,
+        'New Student Assigned',
+        `A new student ${student.firstName} ${student.lastName} has been assigned to you.`,
+        student.id,
+        'student',
+      );
+
+      if (!student) {
+        throw new Error('Failed to create student');
+      }
+
+      await this.drizzle.db.insert(projects).values({
+        title: dto.projectTitle,
+        description: dto.projectDescription,
+        startDate: new Date(),
+        studentId: student.id,
+        supervisorId: student.supervisorId,
+      });
+
+      // Fetch with supervisor and project info
+      const fullStudent = await this.drizzle.db.query.students.findFirst({
+        where: eq(students.id, student.id),
+        columns: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          matricNumber: true,
+          email: true,
+        },
+        with: {
+          supervisor: {
+            columns: {
+              firstName: true,
+              lastName: true,
+            },
+          },
+          project: {
+            columns: {
+              title: true,
+            },
+          },
+        },
+      });
+
+      return {
+        ...fullStudent,
+        supervisorName: fullStudent?.supervisor ? `${fullStudent.supervisor.firstName} ${fullStudent.supervisor.lastName}` : null,
+        projectTitle: fullStudent?.project ? fullStudent.project.title : null,
+        status: fullStudent?.supervisor ? 'assigned' : 'unassigned',
+      };
     }
-
-    await this.drizzle.db.insert(projects).values({
-      title: dto.projectTitle,
-      description: dto.projectDescription,
-      startDate: new Date(),
-      studentId: student.id,
-      supervisorId: student.supervisorId,
-    });
-
-    // Fetch with supervisor and project info
-    const fullStudent = await this.drizzle.db.query.students.findFirst({
-      where: eq(students.id, student.id),
-      columns: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        matricNumber: true,
-        email: true,
-      },
-      with: {
-        supervisor: {
-          columns: {
-            firstName: true,
-            lastName: true,
-          },
-        },
-        project: {
-          columns: {
-            title: true,
-          },
-        },
-      },
-    });
-
-    return {
-      ...fullStudent,
-      supervisorName: fullStudent?.supervisor ? `${fullStudent.supervisor.firstName} ${fullStudent.supervisor.lastName}` : null,
-      projectTitle: fullStudent?.project ? fullStudent.project.title : null,
-      status: fullStudent?.supervisor ? 'assigned' : 'unassigned',
-    };
   }
 
   async updateStudent(id: number, dto: UpdateStudentDto) {
