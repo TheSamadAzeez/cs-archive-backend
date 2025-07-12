@@ -3,11 +3,15 @@ import { DrizzleService } from 'src/database/drizzle.service';
 import { eq, count, and, sql } from 'drizzle-orm';
 import { projects, students, tasks, tasksStatusUpdate, taskSubmissions } from 'src/database/schema';
 import { SubmitTaskDto } from '../dtos/student.dto';
+import { NotificationsService, NotificationType } from 'src/notifications/notifications.service';
 
 @Injectable()
 export class StudentsService {
   private readonly logger = new Logger(StudentsService.name);
-  constructor(private readonly drizzle: DrizzleService) {}
+  constructor(
+    private readonly drizzle: DrizzleService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   async getCompletedTasks(studentId: number) {
     const result = await this.drizzle.db.query.tasks.findMany({
@@ -288,6 +292,15 @@ export class StudentsService {
     // Optionally, update the task status to 'Under Review'
     await this.drizzle.db.update(tasks).set({ status: 'Under Review', updatedAt: new Date() }).where(eq(tasks.id, taskId));
 
+    await this.notificationsService.createNotification(
+      task.supervisorId,
+      'supervisor',
+      NotificationType.TASK_SUBMITTED,
+      'New Task Submission',
+      `A student has submitted a task for review: ${task.task}`,
+      taskId,
+      'task',
+    );
     return { message: 'Task submitted successfully', submission };
   }
 

@@ -1,17 +1,21 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Role, Roles } from 'src/auth/decorators/roles.decorators';
 import { CurrentUser } from 'src/auth/decorators/user.decorator';
 import { StudentsService } from './service/students.service';
 import { SubmitTaskDto } from './dtos/student.dto';
+import { NotificationsService } from 'src/notifications/notifications.service';
 
 @ApiTags('Students')
 @UseGuards(AuthGuard('jwt'))
 @ApiBearerAuth()
 @Controller('students')
 export class StudentsController {
-  constructor(private readonly studentsService: StudentsService) {}
+  constructor(
+    private readonly studentsService: StudentsService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   @Roles(Role.Student)
   @Get('/tasks/completed')
@@ -71,5 +75,24 @@ export class StudentsController {
   @Get('/all-projects')
   async getAllProjects() {
     return this.studentsService.getAllProjects();
+  }
+
+  @Roles(Role.Student)
+  @Get('/notifications')
+  async getNotifications(@CurrentUser('userId') studentId: number) {
+    return this.notificationsService.getNotifications(studentId, 'student');
+  }
+
+  @Roles(Role.Student)
+  @Patch('/notifications/:id/read')
+  async markNotificationAsRead(@CurrentUser('userId') studentId: number, @Param('id') notificationId: number) {
+    return this.notificationsService.markAsRead(notificationId, studentId);
+  }
+
+  @Roles(Role.Student)
+  @Get('/notifications/unread-count')
+  async getUnreadCount(@CurrentUser('userId') studentId: number) {
+    const count = await this.notificationsService.getUnreadCount(studentId, 'student');
+    return { unreadCount: count };
   }
 }
