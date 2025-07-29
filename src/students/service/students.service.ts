@@ -289,8 +289,21 @@ export class StudentsService {
       })
       .returning();
 
-    // Optionally, update the task status to 'Under Review'
     await this.drizzle.db.update(tasks).set({ status: 'Under Review', updatedAt: new Date() }).where(eq(tasks.id, taskId));
+
+    const project = await this.drizzle.db.query.projects.findFirst({
+      where: eq(projects.studentId, studentId),
+    });
+
+    if (project && project.status === 'Not Started') {
+      await this.drizzle.db
+        .update(projects)
+        .set({
+          status: 'In Progress',
+          updatedAt: new Date(),
+        })
+        .where(eq(projects.id, project.id));
+    }
 
     await this.notificationsService.createNotification(
       task.supervisorId,
