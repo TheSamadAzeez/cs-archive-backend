@@ -561,9 +561,38 @@ export class SupervisorsService {
     };
 
     const result = await this.drizzle.db.insert(schedules).values(newSchedule).returning();
+    const createdSchedule = result[0];
+
+    // Get all students under this supervisor
+    const supervisorStudents = await this.drizzle.db.query.students.findMany({
+      where: eq(students.supervisorId, supervisorId),
+      columns: {
+        id: true,
+        firstName: true,
+        lastName: true,
+      },
+    });
+
+    // Send notifications to all students
+    const notificationPromises = supervisorStudents.map((student) => {
+      const startTime12 = convertTo12Hour(startTime24);
+      const endTime12 = convertTo12Hour(endTime24);
+
+      return this.notificationsService.createNotification(
+        student.id,
+        'student',
+        NotificationType.SCHEDULE_CREATED,
+        'New Schedule Created',
+        `Your supervisor has created a new schedule: "${createScheduleDto.title}" from ${startTime12.display} to ${endTime12.display} on ${createScheduleDto.startDate}${createScheduleDto.startDate !== createScheduleDto.endDate ? ` to ${createScheduleDto.endDate}` : ''}.`,
+        createdSchedule.id,
+        'schedule',
+      );
+    });
+
+    // Wait for all notifications to be sent
+    await Promise.all(notificationPromises);
 
     // Return with both 24-hour and 12-hour formats
-    const createdSchedule = result[0];
     return this.formatScheduleResponse(createdSchedule);
   }
 
