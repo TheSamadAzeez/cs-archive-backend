@@ -1,9 +1,11 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { and, count, eq, sql } from 'drizzle-orm';
 import { DrizzleService } from 'src/database/drizzle.service';
-import { projects, projectStatusUpdate, students, Task, tasks, tasksStatusUpdate, taskSubmissions } from 'src/database/schema';
+import { projects, projectStatusUpdate, students, Task, tasks, tasksStatusUpdate, taskSubmissions, schedules, NewSchedule } from 'src/database/schema';
 import { ReviewTaskDto, TaskSubmissionStatus } from '../dto/review-task.dto';
+import { CreateScheduleDto, UpdateScheduleDto } from '../dto/schedule.dto';
 import { NotificationsService, NotificationType } from 'src/notifications/notifications.service';
+import { convertTo12Hour, convertTo24Hour } from 'src/shared/utils/time.utils';
 
 @Injectable()
 export class SupervisorsService {
@@ -531,5 +533,173 @@ export class SupervisorsService {
       supervisorName: project.supervisor ? `${project.supervisor.firstName} ${project.supervisor.lastName}` : null,
       finalProjectLink: project.finalProjectLink,
     }));
+  }
+
+  // Schedule management methods
+  async createSchedule(supervisorId: number, createScheduleDto: CreateScheduleDto) {
+    // Convert 12-hour format to 24-hour format (periods are now required)
+    const startTime24 = convertTo24Hour(createScheduleDto.startTime, createScheduleDto.startPeriod);
+    const endTime24 = convertTo24Hour(createScheduleDto.endTime, createScheduleDto.endPeriod);
+
+    // Validate that start date/time is before end date/time
+    const startDateTime = new Date(`${createScheduleDto.startDate}T${startTime24}`);
+    const endDateTime = new Date(`${createScheduleDto.endDate}T${endTime24}`);
+
+    if (startDateTime >= endDateTime) {
+      throw new BadRequestException('Start date/time must be before end date/time');
+    }
+
+    const newSchedule: NewSchedule = {
+      title: createScheduleDto.title,
+      startDate: new Date(createScheduleDto.startDate),
+      startTime: startTime24, // Store in 24-hour format
+      endDate: new Date(createScheduleDto.endDate),
+      endTime: endTime24, // Store in 24-hour format
+      description: createScheduleDto.description || null,
+      color: createScheduleDto.color || '#3b82f6',
+      supervisorId,
+    };
+
+    const result = await this.drizzle.db.insert(schedules).values(newSchedule).returning();
+
+    // Return with both 24-hour and 12-hour formats
+    const createdSchedule = result[0];
+    return this.formatScheduleResponse(createdSchedule);
+  }
+
+  private formatScheduleResponse(schedule: any) {
+    const startTime12 = convertTo12Hour(schedule.startTime);
+    const endTime12 = convertTo12Hour(schedule.endTime);
+
+    return {
+      id: schedule.id,
+      title: schedule.title,
+      startDate: schedule.startDate,
+      endDate: schedule.endDate,
+      description: schedule.description,
+      color: schedule.color,
+      createdAt: schedule.createdAt,
+      updatedAt: schedule.updatedAt,
+      supervisorId: schedule.supervisorId,
+      // 24-hour format
+      startTime24: schedule.startTime,
+      endTime24: schedule.endTime,
+      // 12-hour format
+      startTime12: startTime12.display,
+      endTime12: endTime12.display,
+      startTimeParts: {
+        time: startTime12.time,
+        period: startTime12.period,
+      },
+      endTimeParts: {
+        time: endTime12.time,
+        period: endTime12.period,
+      },
+    };
+  }
+
+  async getSchedules(supervisorId: number) {
+    const result = await this.drizzle.db.query.schedules.findMany({
+      where: eq(schedules.supervisorId, supervisorId),
+      orderBy: (schedules, { asc }) => [asc(schedules.startDate), asc(schedules.startTime)],
+    });
+
+    return result.map((schedule) => this.formatScheduleResponse(schedule));
+  }
+
+  async getScheduleById(supervisorId: number, scheduleId: number) {
+    const result = await this.drizzle.db.query.schedules.findFirst({
+      where: and(eq(schedules.id, scheduleId), eq(schedules.supervisorId, supervisorId)),
+    });
+
+    if (!result) {
+      throw new NotFoundException('Schedule not found');
+    }
+
+    return this.formatScheduleResponse(result);
+  }
+
+  private async getRawScheduleById(supervisorId: number, scheduleId: number) {
+    const result = await this.drizzle.db.query.schedules.findFirst({
+      where: and(eq(schedules.id, scheduleId), eq(schedules.supervisorId, supervisorId)),
+    });
+
+    if (!result) {
+      throw new NotFoundException('Schedule not found');
+    }
+
+    return result;
+  }
+
+  async updateSchedule(supervisorId: number, scheduleId: number, updateScheduleDto: UpdateScheduleDto) {
+    // Check if schedule exists and belongs to supervisor (get raw data)
+    const existingSchedule = await this.getRawScheduleById(supervisorId, scheduleId);
+
+    // Validate that if time is provided, period must also be provided
+    if (updateScheduleDto.startTime && !updateScheduleDto.startPeriod) {
+      throw new BadRequestException('Start period (AM/PM) is required when start time is provided');
+    }
+
+    if (updateScheduleDto.endTime && !updateScheduleDto.endPeriod) {
+      throw new BadRequestException('End period (AM/PM) is required when end time is provided');
+    }
+
+    // Convert 12-hour format to 24-hour format
+    const startTime24 = updateScheduleDto.startTime && updateScheduleDto.startPeriod ? convertTo24Hour(updateScheduleDto.startTime, updateScheduleDto.startPeriod) : undefined;
+
+    const endTime24 = updateScheduleDto.endTime && updateScheduleDto.endPeriod ? convertTo24Hour(updateScheduleDto.endTime, updateScheduleDto.endPeriod) : undefined;
+
+    // Validate that start date/time is before end date/time if both are provided
+    if (updateScheduleDto.startDate && startTime24 && updateScheduleDto.endDate && endTime24) {
+      const startDateTime = new Date(`${updateScheduleDto.startDate}T${startTime24}`);
+      const endDateTime = new Date(`${updateScheduleDto.endDate}T${endTime24}`);
+
+      if (startDateTime >= endDateTime) {
+        throw new BadRequestException('Start date/time must be before end date/time');
+      }
+    } else if (updateScheduleDto.startDate || startTime24 || updateScheduleDto.endDate || endTime24) {
+      // If only some date/time fields are provided, validate with existing values
+      const startDate = updateScheduleDto.startDate ? new Date(updateScheduleDto.startDate) : existingSchedule.startDate;
+      const startTime = startTime24 || existingSchedule.startTime;
+      const endDate = updateScheduleDto.endDate ? new Date(updateScheduleDto.endDate) : existingSchedule.endDate;
+      const endTime = endTime24 || existingSchedule.endTime;
+
+      const startDateTime = new Date(`${startDate.toISOString().split('T')[0]}T${startTime}`);
+      const endDateTime = new Date(`${endDate.toISOString().split('T')[0]}T${endTime}`);
+
+      if (startDateTime >= endDateTime) {
+        throw new BadRequestException('Start date/time must be before end date/time');
+      }
+    }
+
+    const updateData: Partial<NewSchedule> = {};
+
+    if (updateScheduleDto.title !== undefined) updateData.title = updateScheduleDto.title;
+    if (updateScheduleDto.startDate !== undefined) updateData.startDate = new Date(updateScheduleDto.startDate);
+    if (startTime24 !== undefined) updateData.startTime = startTime24;
+    if (updateScheduleDto.endDate !== undefined) updateData.endDate = new Date(updateScheduleDto.endDate);
+    if (endTime24 !== undefined) updateData.endTime = endTime24;
+    if (updateScheduleDto.description !== undefined) updateData.description = updateScheduleDto.description;
+    if (updateScheduleDto.color !== undefined) updateData.color = updateScheduleDto.color;
+
+    const result = await this.drizzle.db
+      .update(schedules)
+      .set(updateData)
+      .where(and(eq(schedules.id, scheduleId), eq(schedules.supervisorId, supervisorId)))
+      .returning();
+
+    return this.formatScheduleResponse(result[0]);
+  }
+
+  async deleteSchedule(supervisorId: number, scheduleId: number) {
+    // Check if schedule exists and belongs to supervisor
+    await this.getRawScheduleById(supervisorId, scheduleId);
+
+    const result = await this.drizzle.db
+      .delete(schedules)
+      .where(and(eq(schedules.id, scheduleId), eq(schedules.supervisorId, supervisorId)))
+      .returning();
+
+    return { message: 'Schedule deleted successfully', deletedSchedule: this.formatScheduleResponse(result[0]) };
   }
 }

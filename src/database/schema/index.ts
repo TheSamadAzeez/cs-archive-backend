@@ -5,3 +5,4 @@ export * from './auth.schema';
 export * from './tasks.schema';
 export * from './admin.schema';
 export * from './notifications.schema';
+export * from './schedules.schema';

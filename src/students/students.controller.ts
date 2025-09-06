@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Role, Roles } from 'src/auth/decorators/roles.decorators';
 import { CurrentUser } from 'src/auth/decorators/user.decorator';
 import { StudentsService } from './service/students.service';
@@ -94,5 +94,14 @@ export class StudentsController {
   async getUnreadCount(@CurrentUser('userId') studentId: number) {
     const count = await this.notificationsService.getUnreadCount(studentId, 'student');
     return { unreadCount: count };
+  }
+
+  @Roles(Role.Student)
+  @Get('/supervisor/schedules')
+  @ApiOperation({ summary: 'Get all schedules created by the assigned supervisor' })
+  @ApiResponse({ status: 200, description: 'Supervisor schedules retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Student not found or no supervisor assigned' })
+  async getSupervisorSchedules(@CurrentUser('userId') studentId: number) {
+    return this.studentsService.getSupervisorSchedules(studentId);
   }
 }
