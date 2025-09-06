@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException, Logger, ForbiddenException } from '@nestjs/common';
 import { DrizzleService } from 'src/database/drizzle.service';
 import { eq, count, and, sql } from 'drizzle-orm';
-import { projects, students, tasks, tasksStatusUpdate, taskSubmissions } from 'src/database/schema';
+import { projects, students, tasks, tasksStatusUpdate, taskSubmissions, schedules } from 'src/database/schema';
 import { SubmitTaskDto } from '../dtos/student.dto';
 import { NotificationsService, NotificationType } from 'src/notifications/notifications.service';
+import { convertTo12Hour } from 'src/shared/utils/time.utils';
 
 @Injectable()
 export class StudentsService {
@@ -453,5 +454,75 @@ export class StudentsService {
       supervisorName: project.supervisor ? `${project.supervisor.firstName} ${project.supervisor.lastName}` : null,
       finalProjectLink: project.finalProjectLink,
     }));
+  }
+
+  async getSupervisorSchedules(studentId: number) {
+    // First, get the student's supervisor ID
+    const student = await this.drizzle.db.query.students.findFirst({
+      where: eq(students.id, studentId),
+      columns: {
+        supervisorId: true,
+      },
+    });
+
+    if (!student) {
+      throw new NotFoundException('Student not found');
+    }
+
+    if (!student.supervisorId) {
+      throw new NotFoundException('No supervisor assigned to this student');
+    }
+
+    // Get all schedules created by the student's supervisor
+    const supervisorSchedules = await this.drizzle.db.query.schedules.findMany({
+      where: eq(schedules.supervisorId, student.supervisorId),
+      orderBy: (schedules, { asc }) => [asc(schedules.startDate), asc(schedules.startTime)],
+      with: {
+        supervisor: {
+          columns: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            fullName: true,
+          },
+        },
+      },
+    });
+
+    return supervisorSchedules.map((schedule) => {
+      const startTime12 = convertTo12Hour(schedule.startTime);
+      const endTime12 = convertTo12Hour(schedule.endTime);
+
+      return {
+        id: schedule.id,
+        title: schedule.title,
+        startDate: schedule.startDate,
+        endDate: schedule.endDate,
+        description: schedule.description,
+        color: schedule.color,
+        createdAt: schedule.createdAt,
+        updatedAt: schedule.updatedAt,
+        // 24-hour format
+        startTime24: schedule.startTime,
+        endTime24: schedule.endTime,
+        // 12-hour format
+        startTime12: startTime12.display,
+        endTime12: endTime12.display,
+        startTimeParts: {
+          time: startTime12.time,
+          period: startTime12.period,
+        },
+        endTimeParts: {
+          time: endTime12.time,
+          period: endTime12.period,
+        },
+        supervisor: {
+          id: schedule.supervisor.id,
+          name: schedule.supervisor.fullName,
+          firstName: schedule.supervisor.firstName,
+          lastName: schedule.supervisor.lastName,
+        },
+      };
+    });
   }
 }
