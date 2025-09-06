@@ -23,6 +23,7 @@ export const studentsRelations = relations(schema.students, ({ one, many }) => (
     fields: [schema.students.id],
     references: [schema.projects.studentId],
   }),
+  works: many(schema.works),
 }));
 
 export const tasksRelations = relations(schema.tasks, ({ one, many }) => ({
@@ -57,11 +58,23 @@ export const supervisorRelations = relations(schema.supervisor, ({ many }) => ({
   projects: many(schema.projects),
   tasks: many(schema.tasks),
   schedules: many(schema.schedules),
+  works: many(schema.works),
 }));
 
 export const schedulesRelations = relations(schema.schedules, ({ one }) => ({
   supervisor: one(schema.supervisor, {
     fields: [schema.schedules.supervisorId],
+    references: [schema.supervisor.id],
+  }),
+}));
+
+export const worksRelations = relations(schema.works, ({ one }) => ({
+  student: one(schema.students, {
+    fields: [schema.works.studentId],
+    references: [schema.students.id],
+  }),
+  supervisor: one(schema.supervisor, {
+    fields: [schema.works.supervisorId],
     references: [schema.supervisor.id],
   }),
 }));
