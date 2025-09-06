@@ -4,7 +4,7 @@ import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagg
 import { Role, Roles } from 'src/auth/decorators/roles.decorators';
 import { CurrentUser } from 'src/auth/decorators/user.decorator';
 import { StudentsService } from './service/students.service';
-import { SubmitTaskDto } from './dtos/student.dto';
+import { SubmitTaskDto, CreateWorkDto } from './dtos/student.dto';
 import { NotificationsService } from 'src/notifications/notifications.service';
 
 @ApiTags('Students')
@@ -103,5 +103,25 @@ export class StudentsController {
   @ApiResponse({ status: 404, description: 'Student not found or no supervisor assigned' })
   async getSupervisorSchedules(@CurrentUser('userId') studentId: number) {
     return this.studentsService.getSupervisorSchedules(studentId);
+  }
+
+  @Roles(Role.Student)
+  @Post('/works')
+  @ApiOperation({ summary: 'Submit completed project to works archive' })
+  @ApiResponse({ status: 201, description: 'Project submitted successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
+  @ApiResponse({ status: 403, description: 'Student already submitted a project or no supervisor assigned' })
+  @ApiResponse({ status: 404, description: 'Student not found' })
+  async createWork(@CurrentUser('userId') studentId: number, @Body() createWorkDto: CreateWorkDto) {
+    return this.studentsService.createWork(studentId, createWorkDto);
+  }
+
+  @Roles(Role.Student)
+  @Get('/works/my-work')
+  @ApiOperation({ summary: "Get student's own submitted work" })
+  @ApiResponse({ status: 200, description: 'Student work retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'No submitted work found for this student' })
+  async getMyWork(@CurrentUser('userId') studentId: number) {
+    return this.studentsService.getMyWork(studentId);
   }
 }
