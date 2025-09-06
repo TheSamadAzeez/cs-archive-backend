@@ -13,6 +13,7 @@ export enum NotificationType {
   TASK_APPROVED = 'task_approved',
   TASK_REJECTED = 'task_rejected',
   PROJECT_SUBMITTED = 'project_submitted',
+  SCHEDULE_CREATED = 'schedule_created',
 }
 
 @Injectable()

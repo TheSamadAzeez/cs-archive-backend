@@ -29,3 +29,29 @@ export class SubmitTaskDto {
   @IsNotEmpty()
   shortDescription: string;
 }
+
+export class CreateWorkDto {
+  @ApiProperty({
+    description: 'The title of the completed project',
+    example: 'Student Management System',
+  })
+  @IsString()
+  @IsNotEmpty()
+  title: string;
+
+  @ApiProperty({
+    description: 'A detailed description of the project',
+    example: 'A comprehensive web application for managing student records and academic information.',
+  })
+  @IsString()
+  @IsNotEmpty()
+  description: string;
+
+  @ApiProperty({
+    description: 'The link to the project repository or deployment',
+    example: 'https://github.com/username/project-repo',
+  })
+  @IsString()
+  @IsNotEmpty()
+  projectLink: string;
+}
