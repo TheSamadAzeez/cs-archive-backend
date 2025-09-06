@@ -1,10 +1,11 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, UseGuards, Delete } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Role, Roles } from 'src/auth/decorators/roles.decorators';
 import { CurrentUser } from 'src/auth/decorators/user.decorator';
 import { SupervisorsService } from './service/supervisors.service';
 import { AssignTaskDto, ReviewTaskDto } from './dto/review-task.dto';
+import { CreateScheduleDto, UpdateScheduleDto } from './dto/schedule.dto';
 import { NotificationsService } from 'src/notifications/notifications.service';
 
 @ApiTags('Supervisors')
@@ -88,5 +89,51 @@ export class SupervisorsController {
   async getUnreadCount(@CurrentUser('userId') supervisorId: number) {
     const count = await this.notificationsService.getUnreadCount(supervisorId, 'supervisor');
     return { unreadCount: count };
+  }
+
+  // Schedule Management Routes
+  @Roles(Role.Supervisor)
+  @Post('/schedules')
+  @ApiOperation({ summary: 'Create a new schedule event' })
+  @ApiResponse({ status: 201, description: 'Schedule created successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
+  async createSchedule(@CurrentUser('userId') supervisorId: number, @Body() createScheduleDto: CreateScheduleDto) {
+    return this.supervisorsService.createSchedule(supervisorId, createScheduleDto);
+  }
+
+  @Roles(Role.Supervisor)
+  @Get('/schedules')
+  @ApiOperation({ summary: 'Get all schedules for the supervisor' })
+  @ApiResponse({ status: 200, description: 'Schedules retrieved successfully' })
+  async getSchedules(@CurrentUser('userId') supervisorId: number) {
+    return this.supervisorsService.getSchedules(supervisorId);
+  }
+
+  @Roles(Role.Supervisor)
+  @Get('/schedules/:id')
+  @ApiOperation({ summary: 'Get a specific schedule by ID' })
+  @ApiResponse({ status: 200, description: 'Schedule retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Schedule not found' })
+  async getScheduleById(@CurrentUser('userId') supervisorId: number, @Param('id') scheduleId: number) {
+    return this.supervisorsService.getScheduleById(supervisorId, scheduleId);
+  }
+
+  @Roles(Role.Supervisor)
+  @Patch('/schedules/:id')
+  @ApiOperation({ summary: 'Update a specific schedule' })
+  @ApiResponse({ status: 200, description: 'Schedule updated successfully' })
+  @ApiResponse({ status: 404, description: 'Schedule not found' })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
+  async updateSchedule(@CurrentUser('userId') supervisorId: number, @Param('id') scheduleId: number, @Body() updateScheduleDto: UpdateScheduleDto) {
+    return this.supervisorsService.updateSchedule(supervisorId, scheduleId, updateScheduleDto);
+  }
+
+  @Roles(Role.Supervisor)
+  @Delete('/schedules/:id')
+  @ApiOperation({ summary: 'Delete a specific schedule' })
+  @ApiResponse({ status: 200, description: 'Schedule deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Schedule not found' })
+  async deleteSchedule(@CurrentUser('userId') supervisorId: number, @Param('id') scheduleId: number) {
+    return this.supervisorsService.deleteSchedule(supervisorId, scheduleId);
   }
 }
