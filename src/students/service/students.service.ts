@@ -362,10 +362,19 @@ export class StudentsService {
       orderBy: (tasks, { desc }) => [desc(tasks.updatedAt)],
     });
 
-    // Calculate percentage of completed tasks
+    // Calculate percentage using the same logic as supervisor route
     const totalTasks = allTasks.length;
-    const completedTasks = allTasks.filter((t) => t.status === 'Completed').length;
-    const completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    let completionPercentage = 0;
+
+    if (totalTasks > 0) {
+      const statusRanks = { Completed: 1, Pending: 0, Rejected: 0.25, 'Under Review': 0.5 };
+
+      const totalProgress = allTasks.reduce((acc, task) => {
+        return acc + (statusRanks[task.status] || 0);
+      }, 0);
+
+      completionPercentage = parseFloat(((totalProgress / totalTasks) * 100).toFixed(2));
+    }
 
     // Prepare task history
     const taskHistory = allTasks.map((task) => ({
