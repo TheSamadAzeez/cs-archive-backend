@@ -16,6 +16,7 @@ export class SeederService {
     await this.seedTasks();
     await this.seedProjectStatusUpdates();
     await this.seedTaskStatusUpdates();
+    await this.seedWorks();
   }
 
   async seedSupervisors() {
@@ -374,5 +375,181 @@ export class SeederService {
     }
 
     this.logger.log('Task status updates created successfully.');
+  }
+
+  async clearWorks() {
+    this.logger.log('Clearing existing works...');
+    await this.drizzle.db.delete(schema.works);
+    this.logger.log('All works cleared successfully.');
+  }
+
+  async seedWorks() {
+    // Get all students and supervisors
+    const students = await this.drizzle.db.query.students.findMany();
+    const supervisors = await this.drizzle.db.query.supervisor.findMany();
+
+    if (students.length === 0 || supervisors.length === 0) {
+      this.logger.error('No students or supervisors found. Please seed them first.');
+      return;
+    }
+
+    // Clear existing works before seeding new ones
+    await this.clearWorks();
+
+    this.logger.log('Creating works (published academic projects)...');
+
+    // Realistic academic work titles and descriptions with functional links
+    const worksData = [
+      {
+        title: 'Machine Learning Approaches for Early Detection of Cardiovascular Disease',
+        description:
+          'This research explores various machine learning algorithms including Random Forest, SVM, and Neural Networks for early prediction of cardiovascular disease using patient health metrics. The study achieved 87% accuracy using ensemble methods and provides a comprehensive comparison of different ML approaches.',
+        projectLink: 'https://github.com/microsoft/ML-For-Beginners',
+      },
+      {
+        title: 'Blockchain-Based Supply Chain Management System for Agricultural Products',
+        description:
+          'An innovative blockchain implementation designed to create transparency and traceability in agricultural supply chains. The system tracks products from farm to consumer, ensuring authenticity and reducing fraud in the agricultural sector.',
+        projectLink: 'https://github.com/ethereum/go-ethereum',
+      },
+      {
+        title: 'Real-Time IoT Data Processing Platform for Smart Cities',
+        description:
+          'A comprehensive IoT platform that collects, processes, and analyzes sensor data from various urban infrastructure components. The system handles traffic monitoring, air quality assessment, and energy consumption optimization in real-time.',
+        projectLink: 'https://github.com/apache/kafka',
+      },
+      {
+        title: 'Natural Language Processing for Automated Document Classification',
+        description:
+          'Development of an NLP system that automatically classifies legal documents using transformer-based models. The system achieves 92% accuracy in categorizing contracts, agreements, and legal briefs, significantly reducing manual processing time.',
+        projectLink: 'https://github.com/huggingface/transformers',
+      },
+      {
+        title: 'Cloud-Native Microservices Architecture for E-commerce Platforms',
+        description:
+          'Design and implementation of a scalable microservices architecture deployed on Kubernetes. The system handles user management, product catalog, order processing, and payment services with high availability and fault tolerance.',
+        projectLink: 'https://github.com/kubernetes/kubernetes',
+      },
+      {
+        title: 'Cybersecurity Threat Detection Using Deep Learning',
+        description:
+          'A deep learning-based intrusion detection system that identifies network anomalies and potential security threats. The system uses LSTM networks to analyze network traffic patterns and achieve 94% accuracy in threat detection.',
+        projectLink: 'https://github.com/tensorflow/tensorflow',
+      },
+      {
+        title: 'Mobile Health Application for Diabetes Management',
+        description:
+          'A cross-platform mobile application that helps diabetic patients monitor blood glucose levels, track medication, and receive personalized health recommendations. The app integrates with wearable devices and provides real-time health insights.',
+        projectLink: 'https://github.com/facebook/react-native',
+      },
+      {
+        title: 'Web-Based Collaborative Learning Platform with AI Tutoring',
+        description:
+          'An interactive online learning platform that incorporates AI-powered tutoring systems. The platform provides personalized learning paths, automated assessment, and intelligent content recommendations for enhanced educational outcomes.',
+        projectLink: 'https://github.com/microsoft/vscode',
+      },
+      {
+        title: 'Computer Vision for Autonomous Vehicle Navigation',
+        description:
+          'Implementation of computer vision algorithms for object detection, lane recognition, and obstacle avoidance in autonomous vehicles. The system uses convolutional neural networks and achieves real-time processing for safe navigation.',
+        projectLink: 'https://github.com/opencv/opencv',
+      },
+      {
+        title: 'Quantum Algorithm Implementation for Optimization Problems',
+        description:
+          'Research and implementation of quantum algorithms for solving complex optimization problems. The work focuses on quantum annealing and variational quantum eigensolver algorithms with applications in logistics and resource allocation.',
+        projectLink: 'https://github.com/Qiskit/qiskit',
+      },
+      {
+        title: 'Renewable Energy Management System Using IoT and Machine Learning',
+        description:
+          'An intelligent energy management system that optimizes renewable energy consumption in smart buildings. The system uses IoT sensors and machine learning algorithms to predict energy demand and optimize solar panel efficiency.',
+        projectLink: 'https://github.com/home-assistant/core',
+      },
+      {
+        title: 'Augmented Reality Educational Tool for Interactive Learning',
+        description:
+          'Development of an AR application that enhances traditional classroom learning with interactive 3D models and simulations. The tool covers subjects like chemistry, physics, and biology with immersive educational experiences.',
+        projectLink: 'https://github.com/google-ar/arcore-unity-sdk',
+      },
+    ];
+
+    // Create works for a subset of students (those who have completed projects)
+    const completedProjects = await this.drizzle.db.query.projects.findMany({
+      where: eq(schema.projects.status, 'Completed'),
+      with: {
+        student: true,
+        supervisor: true,
+      },
+    });
+
+    let workIndex = 0;
+    for (const project of completedProjects) {
+      if (workIndex >= worksData.length) break;
+
+      const workData = worksData[workIndex];
+
+      // Check if work already exists for this student
+      const existingWork = await this.drizzle.db.query.works.findFirst({
+        where: eq(schema.works.studentId, project.studentId),
+      });
+
+      if (!existingWork) {
+        this.logger.log(`Creating work for student: ${project.student.firstName} ${project.student.lastName}`);
+
+        await this.drizzle.db.insert(schema.works).values({
+          title: workData.title,
+          description: workData.description,
+          projectLink: workData.projectLink,
+          supervisorId: project.supervisorId,
+          studentId: project.studentId,
+        });
+
+        workIndex++;
+      } else {
+        this.logger.log(`Skipping work for student: ${project.student.firstName} ${project.student.lastName} (already exists)`);
+      }
+    }
+
+    // If we have more works data than completed projects, create additional works
+    // by distributing remaining works among available students and supervisors
+    if (workIndex < worksData.length) {
+      const remainingWorks = worksData.slice(workIndex);
+      let studentIndex = 0;
+
+      for (const workData of remainingWorks) {
+        if (studentIndex >= students.length) break;
+
+        const student = students[studentIndex];
+        const supervisor = supervisors[studentIndex % supervisors.length];
+
+        // Check if work already exists for this student
+        const existingWork = await this.drizzle.db.query.works.findFirst({
+          where: eq(schema.works.studentId, student.id),
+        });
+
+        if (!existingWork) {
+          this.logger.log(`Creating additional work for student: ${student.firstName} ${student.lastName}`);
+
+          await this.drizzle.db.insert(schema.works).values({
+            title: workData.title,
+            description: workData.description,
+            projectLink: workData.projectLink,
+            supervisorId: supervisor.id,
+            studentId: student.id,
+          });
+        }
+
+        studentIndex++;
+      }
+    }
+
+    this.logger.log('Works seeded successfully.');
+  }
+
+  async reseedWorks() {
+    this.logger.log('Reseeding works...');
+    await this.seedWorks();
+    this.logger.log('Works reseeded successfully.');
   }
 }
